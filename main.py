@@ -66,29 +66,48 @@ app = FastAPI(lifespan=lifespan)
 
 @app.post("/measurement/start/")
 async def start_measurement():
+    """Starts the measurement."""
     wlm.start_measurement()
 
 
 @app.post("/measurement/stop/")
 async def stop_measurement():
+    """Stops the measurement."""
     wlm.stop_measurement()
 
 
 @app.post("/exposure/set/")
 async def set_exposure(channel: int, exposure: float):
+    """Sets the exposure of a certain channel.
+    
+    Args:
+        channel: Target channel.
+        exposure: Target exposure.
+    """
     wlm.set_exposure(exposure=exposure, channel=channel)
 
 
 @app.get("/exposure/get/")
 async def get_exposure(channel: int) -> float:
+    """Gets the exposure of a certain channel.
+    
+    Args:
+        channel: Target channel.
+    """
     wlm.get_exposure(channel=channel)
 
 
 @app.post("/active-channel/set/")
 async def set_active_channel(channel: int):
+    """Sets the active channel.
+    
+    Args:
+        channel: Target channel.
+    """
     wlm.set_active_channel(channel=channel)
 
 
 @app.get("/active-channel/get/")
 async def get_active_channel() -> int:
+    """Gets the active channel."""
     wlm.get_active_channel()
