@@ -72,3 +72,13 @@ async def start_measurement():
 @app.post("/measure/stop/")
 async def stop_measurement():
     wlm.stop_measurement()
+
+
+@app.post("/exposure/set/")
+async def set_exposure(channel: int, exposure: float):
+    wlm.set_exposure(exposure=exposure, channel=channel)
+
+
+@app.get("/exposure/get/")
+async def get_exposure(channel: int) -> float:
+    wlm.get_exposure(channel=channel)
