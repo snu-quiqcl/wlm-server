@@ -64,12 +64,12 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
-@app.post("/measure/start/")
+@app.post("/measurement/start/")
 async def start_measurement():
     wlm.start_measurement()
 
 
-@app.post("/measure/stop/")
+@app.post("/measurement/stop/")
 async def stop_measurement():
     wlm.stop_measurement()
 
@@ -90,5 +90,5 @@ async def set_active_channel(channel: int):
 
 
 @app.get("/active-channel/get/")
-async def get_active_channe() -> int:
+async def get_active_channel() -> int:
     wlm.get_active_channel()
