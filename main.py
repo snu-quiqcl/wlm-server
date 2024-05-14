@@ -82,3 +82,13 @@ async def set_exposure(channel: int, exposure: float):
 @app.get("/exposure/get/")
 async def get_exposure(channel: int) -> float:
     wlm.get_exposure(channel=channel)
+
+
+@app.post("/active-channel/set/")
+async def set_active_channel(channel: int):
+    wlm.set_active_channel(channel=channel)
+
+
+@app.get("/active-channel/get/")
+async def get_active_channe() -> int:
+    wlm.get_active_channel()
