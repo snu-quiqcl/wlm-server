@@ -62,3 +62,13 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+
+@app.post("/measure/start/")
+async def start_measurement():
+    wlm.start_measurement()
+
+
+@app.post("/measure/stop/")
+async def stop_measurement():
+    wlm.stop_measurement()
