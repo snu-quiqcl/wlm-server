@@ -20,6 +20,5 @@ jobs:
         pip install --upgrade pip
         pip install -r requirements.txt
     - name: Analyze the code with pylint
-      run: |
-        cd wlm_server/
-        pylint . --report=y
+      working-directory: wlm_server
+      run: pylint . --report=y
