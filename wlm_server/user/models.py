@@ -8,4 +8,5 @@ class User(AbstractUser):
         Team,
         on_delete=models.PROTECT,
         related_name='members',
+        null=True,
     )
