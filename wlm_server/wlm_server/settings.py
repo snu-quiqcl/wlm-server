@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'user.apps.UserConfig',
     'team.apps.TeamConfig',
     'channel.apps.ChannelConfig',
+    'config.apps.ConfigConfig',
 ]
 
 MIDDLEWARE = [
