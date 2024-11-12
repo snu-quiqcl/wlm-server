@@ -6,7 +6,7 @@ class Setting(models.Model):
     channel = models.ForeignKey(
         Channel,
         on_delete=models.PROTECT,
-        related_name='setting_history'
+        related_name='setting_history',
     )
     exposure = models.FloatField()
     period = models.DurationField()
