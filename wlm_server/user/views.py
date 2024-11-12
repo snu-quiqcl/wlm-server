@@ -14,8 +14,7 @@ def sign_in(request):
     if user is not None:
         login(request, user)
         return HttpResponse(status=200)
-    else:
-        return HttpResponse(status=401)
+    return HttpResponse(status=401)
 
 
 @login_required
