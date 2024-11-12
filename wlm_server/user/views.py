@@ -1,7 +1,9 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from rest_framework.decorators import api_view
+
+from .serializer import UserInfoSerializer
 
 @api_view(['POST'])
 def sign_in(request):
@@ -20,3 +22,12 @@ def sign_in(request):
 @api_view(['POST'])
 def sign_out(request):
     logout(request)
+    return HttpResponse(status=200)
+
+
+@login_required
+@api_view(['GET'])
+def handle_info(request):
+    user = request.user
+    data = UserInfoSerializer(user).data
+    return JsonResponse(data)
