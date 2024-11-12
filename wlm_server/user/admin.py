@@ -4,7 +4,7 @@ from django.contrib.auth.admin import UserAdmin
 from .models import User
 
 @admin.register(User)
-class UserAdmin_(UserAdmin):
+class CustomUserAdmin(UserAdmin):
     fieldsets = [
         (
             None,
