@@ -8,6 +8,6 @@ class Setting(models.Model):
         on_delete=models.PROTECT,
         related_name='setting_history',
     )
-    exposure = models.FloatField()
+    exposure = models.DurationField()
     period = models.DurationField()
     created_at = models.DateTimeField(auto_now_add=True)
