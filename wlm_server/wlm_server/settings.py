@@ -43,6 +43,11 @@ INSTALLED_APPS = [
     'team.apps.TeamConfig',
     'channel.apps.ChannelConfig',
     'lock.apps.LockConfig',
+    'setting.apps.SettingConfig',
+    'measurement.apps.MeasurementConfig',
+    'operation.apps.OperationConfig',
+    'calibration.apps.CalibrationConfig',
+    'event.apps.EventConfig',
     'config.apps.ConfigConfig',
 ]
 

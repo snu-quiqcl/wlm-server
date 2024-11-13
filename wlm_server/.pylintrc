@@ -2,4 +2,4 @@
 load-plugins=pylint_django
 django-settings-module=wlm_server.settings
 ignore=migrations
-disable=missing-module-docstring, missing-class-docstring, missing-function-docstring
+disable=missing-module-docstring, missing-class-docstring, missing-function-docstring, too-many-ancestors
