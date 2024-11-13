@@ -27,7 +27,8 @@ class CustomUserAdmin(UserAdmin):
             },
         ),
     ]
-    list_display = ('username', 'id', 'team__name', 'is_superuser')
-    list_filter = ('team__name', 'is_superuser')
-    search_fields = ('username', 'team__name')
-    ordering = ('id',)
+    list_display = ['username', 'id', 'team__name', 'is_superuser']
+    list_filter = ['team__name', 'is_superuser']
+    search_fields = ['username', 'team__name']
+    ordering = ['id']
+    readonly_fields = ['last_login']
