@@ -2,3 +2,4 @@ Django==5.1.*
 python-decouple==3.8
 pylint==3.3.*
 pylint-django==2.6.*
+djangorestframework==3.15.*
