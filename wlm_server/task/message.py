@@ -2,6 +2,7 @@
 
 import dataclasses
 import enum
+import queue
 from typing import Any
 
 class ActionType(enum.Enum):
@@ -31,5 +32,32 @@ class MessageInfo:
     data: dict[str, Any]
 
 
-class messageQueue:
+class MessageQueue:
     """Thread-safe message queue from request handler to task handler."""
+
+    def __init__(self):
+        self._queue = queue.Queue()
+
+    def push(self, message: MessageInfo):
+        """Pushes the given message to the message queue.
+        
+        Args:
+            message: Message info.
+        """
+        self._queue.put(message)
+
+    def pop(self) -> MessageInfo | None:
+        """Pops the oldest message from the message queue.
+        
+        Returns:
+            The oldest message. If there are no remaining messages, it returns None.
+        """
+        try:
+            message = self._queue.get_nowait()
+            return message
+        except queue.Empty:
+            return None
+
+    def clear(self):
+        """Clears the message queue."""
+        self._queue = queue.Queue()
