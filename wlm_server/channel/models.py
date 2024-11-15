@@ -4,7 +4,7 @@ from team.models import Team
 
 class Channel(models.Model):
     channel = models.IntegerField(primary_key=True)
-    team = models.ManyToManyField(
+    teams = models.ManyToManyField(
         Team,
         related_name='channels',
     )
