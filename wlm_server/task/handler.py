@@ -24,6 +24,6 @@ class TaskHandler(threading.Thread):
 
     def run(self):
         while True:
-            while (message := messageQueue.pop()) is not None:
+            while (message := messageQueue.pop()) is not None:  # pylint: disable=unused-variable
                 pass
-            measure = messageQueue.pop()
+            measure = messageQueue.pop()  # pylint: disable=unused-variable
