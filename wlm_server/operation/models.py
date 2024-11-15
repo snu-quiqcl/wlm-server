@@ -1,10 +1,16 @@
 from django.db import models
 
 from user.models import User
+from channel.models import Channel
 
 class Operation(models.Model):
     user = models.ForeignKey(
         User,
+        on_delete=models.PROTECT,
+        related_name='operation_history',
+    )
+    channel = models.ForeignKey(
+        Channel,
         on_delete=models.PROTECT,
         related_name='operation_history',
     )
