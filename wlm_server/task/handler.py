@@ -19,6 +19,7 @@ class TaskHandler(threading.Thread):
     def __init__(self):
         super().__init__()
         self._measure_queue = MeasureQueue()
+        self._channel_to_period = {}
 
     def run(self):
         while True:
