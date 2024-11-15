@@ -7,6 +7,7 @@ from typing import Any
 
 class ActionType(enum.Enum):
     """Action type."""
+    CLOSE = "close"
     OPERATE = "operate"
     EXPOSURE = "exposure"
     PERIOD = "period"
@@ -19,17 +20,29 @@ class MessageInfo:
     Fields:
         action: Action type.
         channel: Target channel. If None, it targets WLM.
-        data: Additional arguments for action. The arguments required for each action type are as follows.
-          OPERATE:
-            on (bool): If True, start measurement. Otherwise, stop measurement.
-          EXPOSURE:
+        data: Additional arguments for action.
+
+    Actions:
+        CLOSE: Close the WLM connection.
+          channel: None.
+          data: None.
+        OPERATE:
+          channel: Target channel.
+          data:
+            on (bool): If True, start measurement of the given channel. Otherwise, stop measurement
+              of the given channel.
+        EXPOSURE:
+          channel: Target channel.
+          data:
             exposure (datetime.timedelta): New exposure time.
-          PERIOD:
+        PERIOD:
+          channel: Target channel.
+          data:
             period (datetime.timedelta): New period.
     """
     action: ActionType
     channel: int | None
-    data: dict[str, Any]
+    data: dict[str, Any] | None
 
 
 class MessageQueue:
