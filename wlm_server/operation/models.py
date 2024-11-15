@@ -16,3 +16,11 @@ class Operation(models.Model):
     )
     on = models.BooleanField()
     occured_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return (
+            f'User: {self.user}, '
+            f'Channel: {self.channel}, '
+            f'On: {self.on}, '
+            f'Occured at: {self.occured_at}'
+        )

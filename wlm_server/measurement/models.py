@@ -10,3 +10,10 @@ class Measurement(models.Model):
     )
     frequency = models.FloatField()
     measured_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return (
+            f'Setting: {self.setting}, '
+            f'Frequency: {self.frequency}, '
+            f'Measured at: {self.measured_at}'
+        )
