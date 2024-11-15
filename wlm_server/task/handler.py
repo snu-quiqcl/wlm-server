@@ -1,6 +1,7 @@
 """Module for task handler with WLM."""
 
 import threading
+from datetime import timedelta
 
 from .measure import MeasureQueue
 from .message import messageQueue
@@ -18,8 +19,8 @@ class TaskHandler(threading.Thread):
 
     def __init__(self):
         super().__init__()
-        self._measure_queue = MeasureQueue()
-        self._channel_to_period = {}
+        self._measure_queue: MeasureQueue = MeasureQueue()
+        self._channel_to_period: dict[int, timedelta] = {}
 
     def run(self):
         while True:
