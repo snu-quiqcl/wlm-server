@@ -24,3 +24,4 @@ class TaskHandler(threading.Thread):
         while True:
             while (message := messageQueue.pop()) is not None:
                 pass
+            measure = messageQueue.pop()
