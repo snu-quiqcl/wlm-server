@@ -32,10 +32,10 @@ class MeasureQueue:
         heapq.heappush(self._queue, (priority, measure))
 
     def pop(self) -> MeasureInfo | None:
-        """Pops the measurement with the earlist deadline from the measurement queue.
+        """Pops the measurement with the earliest deadline from the measurement queue.
 
         Returns:
-            The measurement with the earlist deadline. If there are no scheduled measurements, it
+            The measurement with the earliest deadline. If there are no scheduled measurements, it
               returns None.
         """
         try:
