@@ -42,5 +42,4 @@ class MeasureQueue:
             item = heapq.heappop(self._queue)
         except IndexError:
             return None
-        else:
-            return item[1]
+        return item[1]
