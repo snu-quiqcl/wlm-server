@@ -2,7 +2,7 @@
 
 import dataclasses
 import heapq
-from datetime import timedelta
+from datetime import datetime
 
 @dataclasses.dataclass
 class MeasureInfo:
@@ -13,7 +13,7 @@ class MeasureInfo:
         deadline: Measurement deadline.
     """
     channel: int
-    deadline: timedelta
+    deadline: datetime
 
 
 class MeasureQueue:
