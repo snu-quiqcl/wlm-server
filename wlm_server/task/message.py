@@ -7,10 +7,10 @@ from typing import Any
 
 class ActionType(enum.Enum):
     """Action type."""
-    CLOSE = "close"
-    OPERATE = "operate"
-    EXPOSURE = "exposure"
-    PERIOD = "period"
+    CLOSE = 'close'
+    OPERATE = 'operate'
+    EXPOSURE = 'exposure'
+    PERIOD = 'period'
 
 
 @dataclasses.dataclass
