@@ -67,9 +67,10 @@ class MessageQueue:
         """
         try:
             message = self._queue.get_nowait()
-            return message
         except queue.Empty:
             return None
+        else:
+            return message
 
     def clear(self):
         """Clears the message queue."""
