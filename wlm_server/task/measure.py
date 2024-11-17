@@ -20,7 +20,7 @@ class MeasureQueue:
     """Prioritized measurement queue based on deadlines."""
 
     def __init__(self):
-        self._queue = []
+        self._queue: list[tuple[datetime, MeasureInfo]] = []
 
     def push(self, measure: MeasureInfo):
         """Pushes the given measurement to the measurement queue.
