@@ -7,7 +7,7 @@ from django.conf import settings
 from pylablib.devices.HighFinesse.wlm import WLM
 
 from config.models import Config
-from .message import MessageQueue
+from .message import ActionType, MessageQueue
 from .measure import MeasureQueue
 
 class TaskHandler(threading.Thread):
@@ -37,8 +37,20 @@ class TaskHandler(threading.Thread):
         self._wlm = WLM(wlm_version, wlm_dll_path, wlm_app_path)
         self._wlm.open()
 
+    def _close_connection(self):
+        self._wlm.close()
+
     def run(self):
         while True:
             while (message := self._message_queue.pop()) is not None:  # pylint: disable=unused-variable
-                pass
+                match message.action:
+                    case ActionType.CLOSE:
+                        self._close_connection()
+                        return
+                    case ActionType.OPERATE:
+                        pass
+                    case ActionType.EXPOSURE:
+                        pass
+                    case ActionType.PERIOD:
+                        pass
             measure = self._measure_queue.pop()  # pylint: disable=unused-variable
