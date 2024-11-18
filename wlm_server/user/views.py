@@ -1,4 +1,4 @@
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from rest_framework.response import Response
@@ -32,4 +32,4 @@ def sign_out(request):
 def handle_info(request):
     user = request.user
     data = UserInfoSerializer(user).data
-    return JsonResponse(data)
+    return Response(data)
