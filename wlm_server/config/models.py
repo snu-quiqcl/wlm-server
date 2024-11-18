@@ -11,10 +11,6 @@ class Config(models.Model):
     calib_freq = models.FloatField()
     lock_duration = models.DurationField(default=timedelta(minutes=5))
 
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                check=~Q(id__gt=1),
-                name='unique_config',
-            ),
-        ]
+    def clean(self):
+        if Config.objects.count() and self.id != Config.objects.get().id:
+            raise ValueError('A config can only exist once at most.')
