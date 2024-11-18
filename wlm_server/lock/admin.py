@@ -16,4 +16,4 @@ class LockAdmin(admin.ModelAdmin):
     list_filter = ['user', 'channel']
     search_fields = ['user']
     ordering = ['expires_at']
-    readonly_fields = ['started_at', 'expires_at']
+    readonly_fields = ['started_at']
