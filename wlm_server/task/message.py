@@ -74,6 +74,3 @@ class MessageQueue:
     def clear(self):
         """Clears the message queue."""
         self._queue = queue.Queue()
-
-
-messageQueue = MessageQueue()

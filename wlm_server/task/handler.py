@@ -3,8 +3,10 @@
 import threading
 from datetime import timedelta
 
+from django.conf import settings
+
+from .message import MessageQueue
 from .measure import MeasureQueue
-from .message import messageQueue
 
 class TaskHandler(threading.Thread):
     """Task handler for controlling and monitoring WLM.
@@ -19,11 +21,12 @@ class TaskHandler(threading.Thread):
 
     def __init__(self):
         super().__init__()
+        self._message_queue: MessageQueue = settings.MESSAGE_QUEUE
         self._measure_queue: MeasureQueue = MeasureQueue()
         self._channel_to_period: dict[int, timedelta] = {}
 
     def run(self):
         while True:
-            while (message := messageQueue.pop()) is not None:  # pylint: disable=unused-variable
+            while (message := self._message_queue.pop()) is not None:  # pylint: disable=unused-variable
                 pass
             measure = self._measure_queue.pop()  # pylint: disable=unused-variable
