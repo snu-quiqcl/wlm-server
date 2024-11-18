@@ -20,6 +20,6 @@ class Config(models.Model):
             f'Lock duration: {self.lock_duration}'
         )
 
-     def clean(self):
+    def clean(self):
         if Config.objects.count() and self.id != Config.objects.get().id:
             raise ValueError('A config can only exist once at most.')
