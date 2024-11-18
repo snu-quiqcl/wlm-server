@@ -14,6 +14,6 @@ class MeasurementAdmin(admin.ModelAdmin):
     ]
     list_display = ['id', 'setting__channel', 'frequency', 'measured_at']
     list_filter = ['setting__channel']
-    search_fields = ['measured_at']
+    search_fields = ['frequency', 'measured_at']
     ordering = ['measured_at']
     readonly_fields = ['measured_at']
