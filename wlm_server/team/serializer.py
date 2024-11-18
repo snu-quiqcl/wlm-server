@@ -6,6 +6,6 @@ class TeamInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Team
         fields = (
-            "id",
-            "name",
+            'id',
+            'name',
         )

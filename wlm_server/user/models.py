@@ -10,3 +10,6 @@ class User(AbstractUser):
         related_name='members',
         null=True,
     )
+
+    def __str__(self):
+        return self.username

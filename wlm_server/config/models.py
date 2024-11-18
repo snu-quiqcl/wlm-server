@@ -10,6 +10,16 @@ class Config(models.Model):
     calib_freq = models.FloatField()
     lock_duration = models.DurationField(default=timedelta(minutes=5))
 
-    def clean(self):
+    def __str__(self):
+        return (
+            f'WLM version: {self.wlm_version}, '
+            f'WLM DLL path: {self.wlm_dll_path}, '
+            f'WLM app path: {self.wlm_app_path}, '
+            f'Calibration channel: {self.calib_ch}, '
+            f'Calibration frequency: {self.calib_freq}, '
+            f'Lock duration: {self.lock_duration}'
+        )
+
+     def clean(self):
         if Config.objects.count() and self.id != Config.objects.get().id:
             raise ValueError('A config can only exist once at most.')

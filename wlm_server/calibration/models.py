@@ -9,3 +9,9 @@ class Calibration(models.Model):
         related_name='calib_history',
     )
     occured_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return (
+            f'User: {self.user}, '
+            f'Occured at: {self.occured_at}'
+        )

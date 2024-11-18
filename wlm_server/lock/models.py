@@ -24,3 +24,11 @@ class Lock(models.Model):
     )
     started_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(default=get_default_expires_at)
+
+    def __str__(self):
+        return (
+            f'User: {self.user}, '
+            f'Channel: {self.channel}, '
+            f'Started at: {self.started_at}, '
+            f'Expires at: {self.expires_at}'
+        )
