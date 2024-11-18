@@ -4,7 +4,9 @@ import threading
 from datetime import timedelta
 
 from django.conf import settings
+from pylablib.devices.HighFinesse.wlm import WLM
 
+from config.models import Config
 from .message import MessageQueue
 from .measure import MeasureQueue
 
@@ -21,9 +23,19 @@ class TaskHandler(threading.Thread):
 
     def __init__(self):
         super().__init__()
+        self._wlm: WLM
         self._message_queue: MessageQueue = settings.MESSAGE_QUEUE
         self._measure_queue: MeasureQueue = MeasureQueue()
         self._channel_to_period: dict[int, timedelta] = {}
+        self._open_connection()
+
+    def _open_connection(self):
+        config = Config.objects.first()
+        wlm_version = config.wlm_version
+        wlm_dll_path = config.wlm_dll_path
+        wlm_app_path = config.wlm_app_path
+        self._wlm = WLM(wlm_version, wlm_dll_path, wlm_app_path)
+        self._wlm.open()
 
     def run(self):
         while True:
