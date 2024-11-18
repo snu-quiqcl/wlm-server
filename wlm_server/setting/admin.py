@@ -13,7 +13,7 @@ class SettingAdmin(admin.ModelAdmin):
         ),
     ]
     list_display = ['id', 'channel', 'exposure', 'period', 'created_at']
-    list_filter = []
+    list_filter = ['channel']
     search_fields = ['exposure', 'period']
     ordering = ['created_at']
     readonly_fields = ['created_at']
