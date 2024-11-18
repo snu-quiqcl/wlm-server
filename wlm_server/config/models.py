@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.db import models
+from django.core.exceptions import ValidationError
 
 class Config(models.Model):
     wlm_version = models.IntegerField(blank=True, null=True, default=None)
@@ -22,4 +23,4 @@ class Config(models.Model):
 
     def clean(self):
         if Config.objects.count() and self.id != Config.objects.get().id:
-            raise ValueError('A config can only exist once at most.')
+            raise ValidationError('A config can only exist once at most.')
