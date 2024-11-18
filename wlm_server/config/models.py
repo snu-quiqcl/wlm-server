@@ -1,7 +1,6 @@
 from datetime import timedelta
 
 from django.db import models
-from django.db.models import Q
 
 class Config(models.Model):
     wlm_version = models.IntegerField(blank=True, null=True, default=None)
