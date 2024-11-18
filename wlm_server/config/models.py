@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.db import models
+from django.db.models import Q
 
 class Config(models.Model):
     wlm_version = models.IntegerField(blank=True, null=True, default=None)
@@ -12,7 +13,8 @@ class Config(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(
-                fields=['id'], name='unique_config'
-            )
+            models.CheckConstraint(
+                check=~Q(id__gt=1),
+                name='unique_config',
+            ),
         ]
