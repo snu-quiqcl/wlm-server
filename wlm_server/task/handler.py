@@ -52,7 +52,7 @@ class TaskHandler(threading.Thread):
         self._measure_queue.push(measure)
 
     def _stop_channel_measurement(self, channel: int):
-        pass
+        self._measure_queue.remove(channel)
 
     def run(self):
         while True:
