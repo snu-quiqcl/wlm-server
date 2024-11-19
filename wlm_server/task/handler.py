@@ -1,14 +1,15 @@
 """Module for task handler with WLM."""
 
 import threading
-from datetime import timedelta
+from datetime import timedelta, now
 
 from django.conf import settings
 from pylablib.devices.HighFinesse.wlm import WLM
 
 from config.models import Config
+from setting.models import Setting
 from .message import ActionType, MessageQueue
-from .measure import MeasureQueue
+from .measure import MeasureInfo, MeasureQueue
 
 class TaskHandler(threading.Thread):
     """Task handler for controlling and monitoring WLM.
@@ -42,15 +43,32 @@ class TaskHandler(threading.Thread):
         self._wlm.stop_measurement()
         self._wlm.close()
 
+    def _start_channel_measurement(self, channel: int):
+        setting = Setting.objects.filter(channel__name=channel).order_by('-created_at').first()
+        period = setting.period
+        self._channel_to_period[channel] = period
+        deadline = now() + period
+        measure = MeasureInfo(channel, deadline)
+        self._measure_queue.push(measure)
+
+    def _stop_channel_measurement(self, channel: int):
+        pass
+
     def run(self):
         while True:
             while (message := self._message_queue.pop()) is not None:
+                channel = message.channel
+                data = message.data
                 match message.action:
                     case ActionType.CLOSE:
                         self._close_connection()
                         return
                     case ActionType.OPERATE:
-                        pass
+                        on = data['on']
+                        if on:
+                            self._start_channel_measurement(channel)
+                        else:
+                            self._stop_channel_measurement(channel)
                     case ActionType.EXPOSURE:
                         pass
                     case ActionType.PERIOD:
