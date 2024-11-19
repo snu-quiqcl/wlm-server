@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.db import models
+from django.core.exceptions import ValidationError
 
 class Config(models.Model):
     wlm_version = models.IntegerField(blank=True, null=True, default=None)
@@ -20,9 +21,6 @@ class Config(models.Model):
             f'Lock duration: {self.lock_duration}'
         )
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['id'], name='unique_config'
-            )
-        ]
+    def clean(self):
+        if Config.objects.count() and self.id != Config.objects.get().id:
+            raise ValidationError('A config can only exist once at most.')
