@@ -54,6 +54,9 @@ class TaskHandler(threading.Thread):
     def _stop_channel_measurement(self, channel: int):
         self._measure_queue.remove(channel)
 
+    def _set_channel_exposure(self, channel: int, exposure: timedelta):
+        self._wlm.set_exposure(exposure=exposure.total_seconds(), channel=channel)
+
     def run(self):
         while True:
             while (message := self._message_queue.pop()) is not None:
@@ -70,7 +73,8 @@ class TaskHandler(threading.Thread):
                         else:
                             self._stop_channel_measurement(channel)
                     case ActionType.EXPOSURE:
-                        pass
+                        exposure = data['exposure']
+                        self._set_channel_exposure(channel, exposure)
                     case ActionType.PERIOD:
                         period = data['period']
                         self._channel_to_period[channel] = period
