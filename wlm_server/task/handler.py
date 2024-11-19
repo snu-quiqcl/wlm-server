@@ -44,7 +44,7 @@ class TaskHandler(threading.Thread):
 
     def run(self):
         while True:
-            while (message := self._message_queue.pop()) is not None:  # pylint: disable=unused-variable
+            while (message := self._message_queue.pop()) is not None:
                 match message.action:
                     case ActionType.CLOSE:
                         self._close_connection()
