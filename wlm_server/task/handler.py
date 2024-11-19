@@ -72,5 +72,6 @@ class TaskHandler(threading.Thread):
                     case ActionType.EXPOSURE:
                         pass
                     case ActionType.PERIOD:
-                        pass
+                        period = data['period']
+                        self._channel_to_period[channel] = period
             measure = self._measure_queue.pop()  # pylint: disable=unused-variable
