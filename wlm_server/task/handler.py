@@ -36,8 +36,10 @@ class TaskHandler(threading.Thread):
         wlm_app_path = config.wlm_app_path
         self._wlm = WLM(wlm_version, wlm_dll_path, wlm_app_path)
         self._wlm.open()
+        self._wlm.start_measurement()
 
     def _close_connection(self):
+        self._wlm.stop_measurement()
         self._wlm.close()
 
     def run(self):
