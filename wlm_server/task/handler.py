@@ -1,7 +1,7 @@
 """Module for task handler with WLM."""
 
 import threading
-from datetime import timedelta, now
+from datetime import datetime, timedelta
 
 from django.conf import settings
 from pylablib.devices.HighFinesse.wlm import WLM
@@ -47,7 +47,7 @@ class TaskHandler(threading.Thread):
         setting = Setting.objects.filter(channel__name=channel).order_by('-created_at').first()
         period = setting.period
         self._channel_to_period[channel] = period
-        deadline = now() + period
+        deadline = datetime.now() + period
         measure = MeasureInfo(channel, deadline)
         self._measure_queue.push(measure)
 
