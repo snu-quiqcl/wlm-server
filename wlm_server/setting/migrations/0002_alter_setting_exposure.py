@@ -10,6 +10,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunSQL(
+            "ALTER TABLE setting_setting ALTER COLUMN exposure TYPE INTERVAL USING (exposure * INTERVAL '1 second');",
+            reverse_sql='ALTER TABLE setting_setting ALTER COLUMN exposure TYPE DOUBLE PRECISION USING (extract(epoch from exposure));'
+        ),
         migrations.AlterField(
             model_name='setting',
             name='exposure',
