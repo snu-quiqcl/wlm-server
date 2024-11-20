@@ -24,6 +24,7 @@ class TaskHandler(threading.Thread):
 
     def __init__(self):
         super().__init__()
+        self.daemon = True
         self._wlm: WLM
         self._message_queue: MessageQueue = settings.MESSAGE_QUEUE
         self._measure_queue: MeasureQueue = MeasureQueue()
