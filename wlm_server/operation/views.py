@@ -42,3 +42,7 @@ def handle_info(request, ch: int):
         if not is_wlm_running:
             task_handler = TaskHandler()
             task_handler.start()
+        if not is_channel_running:
+            message = MessageInfo(ActionType.OPERATE, ch, {'on': True})
+            message_queue.push(message)
+        operation.save()
