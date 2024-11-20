@@ -52,3 +52,6 @@ def handle_info(request, ch: int):
         if not is_channel_running:
             message = MessageInfo(ActionType.OPERATE, ch, {'on': False})
             message_queue.push(message)
+        if not is_wlm_running:
+            message = MessageInfo(ActionType.CLOSE, None, None)
+            message_queue.push(message)
