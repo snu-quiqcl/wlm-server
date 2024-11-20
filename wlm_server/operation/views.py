@@ -20,9 +20,9 @@ def get_running_status(ch: int) -> tuple[bool, bool]:
     latest_operations = (
         Operation.objects.order_by('channel', 'user', '-occured_at').distinct('channel', 'user')
     )  # latest operations for each channel and user
-    on_operations = latest_operations.filter(on=True)
-    is_wlm_running = on_operations.exists()
-    is_channel_running = on_operations.filter(channel__channel=ch).exists()
+    is_wlm_running = any(op.on for op in latest_operations)
+    is_channel_running = any(op.channel.channel == ch and op.on for op in latest_operations)
+    print(is_wlm_running, is_channel_running)
     return is_wlm_running, is_channel_running
 
 
