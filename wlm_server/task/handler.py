@@ -32,10 +32,7 @@ class TaskHandler(threading.Thread):
 
     def _open_connection(self):
         config = Config.objects.first()
-        wlm_version = config.wlm_version
-        wlm_dll_path = config.wlm_dll_path
-        wlm_app_path = config.wlm_app_path
-        self._wlm = WLM(wlm_version, wlm_dll_path, wlm_app_path)
+        self._wlm = WLM(config.wlm_version, config.wlm_dll_path, config.wlm_app_path)
         self._wlm.open()
         self._wlm.start_measurement()
 
@@ -47,8 +44,7 @@ class TaskHandler(threading.Thread):
         setting = Setting.objects.filter(channel__name=channel).order_by('-created_at').first()
         period = setting.period
         self._channel_to_period[channel] = period
-        deadline = datetime.now() + period
-        measure = MeasureInfo(channel, deadline)
+        measure = MeasureInfo(channel, datetime.now())
         self._measure_queue.push(measure)
 
     def _stop_channel_measurement(self, channel: int):

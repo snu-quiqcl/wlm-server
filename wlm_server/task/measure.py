@@ -50,5 +50,5 @@ class MeasureQueue:
         Args:
             channel: Target channel.
         """
-        self._queue = list(filter(lambda item: item[1].channel != channel, self._queue))
+        self._queue = [item for item in self._queue if item[1].channel != channel]
         heapq.heapify(self._queue)
