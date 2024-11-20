@@ -1,13 +1,21 @@
+from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
+from django.conf import settings
+from rest_framework.decorators import api_view
+
 from operation.models import Operation
+from channel.models import Channel
+from task.message import ActionType, MessageInfo, MessageQueue
+from task.handler import TaskHandler
 
 def get_running_status(ch: int) -> tuple[bool, bool]:
-    """Gets running status of WLM and the given channel based on operation DB.
+    """Gets running status of WLM and the given channel.
     
     Args:
         ch: Target channel.
 
     Returns:
-        Tuple with WLM running status and target channel running status.
+        Tuple with WLM running status and target channel running
     """
     latest_operations = (
         Operation.objects.order_by('channel', 'user', '-occured_at').distinct('channel', 'user')
@@ -16,3 +24,21 @@ def get_running_status(ch: int) -> tuple[bool, bool]:
     is_wlm_running = on_operations.exists()
     is_channel_running = on_operations.filter(channel__channel=ch).exists()
     return is_wlm_running, is_channel_running
+
+
+@login_required
+@api_view(['POST'])
+def handle_info(request, ch: int):
+    user = request.user
+    channel = Channel.objects.get(channel=ch)
+    if user.team not in channel.teams.all():
+        return HttpResponse(status=403)
+    message_queue: MessageQueue = settings.MESSAGE_QUEUE
+    req_data = request.data.copy()
+    on = req_data['on']
+    operation = Operation(user=user, channel=channel, on=on)
+    if on:
+        is_wlm_running, is_channel_running = get_running_status(ch)
+        if not is_wlm_running:
+            task_handler = TaskHandler()
+            task_handler.start()
