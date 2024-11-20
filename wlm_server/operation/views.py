@@ -46,3 +46,9 @@ def handle_info(request, ch: int):
             message = MessageInfo(ActionType.OPERATE, ch, {'on': True})
             message_queue.push(message)
         operation.save()
+    else:
+        operation.save()
+        is_wlm_running, is_channel_running = get_running_status(ch)
+        if not is_channel_running:
+            message = MessageInfo(ActionType.OPERATE, ch, {'on': False})
+            message_queue.push(message)
