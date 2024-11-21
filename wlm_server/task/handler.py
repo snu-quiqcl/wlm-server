@@ -80,3 +80,6 @@ class TaskHandler(threading.Thread):
             self._wlm.set_active_channel(channel=channel)
             frequency = self._wlm.get_frequency(channel=channel, error_on_invalid=False,
                                            wait=True, timeout=3)
+            deadline = datetime.now() + self._channel_to_period[channel]
+            next_measure = MeasureInfo(channel, deadline)
+            self._measure_queue.push(next_measure)
