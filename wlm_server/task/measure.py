@@ -43,3 +43,12 @@ class MeasureQueue:
         except IndexError:
             return None
         return item[1]
+
+    def remove(self, channel: int):
+        """Removes the measurement of the given channel from the measurement queue.
+        
+        Args:
+            channel: Target channel.
+        """
+        self._queue = [item for item in self._queue if item[1].channel != channel]
+        heapq.heapify(self._queue)
