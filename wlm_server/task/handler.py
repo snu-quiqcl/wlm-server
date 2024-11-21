@@ -8,6 +8,7 @@ from pylablib.devices.HighFinesse.wlm import WLM
 
 from config.models import Config
 from setting.models import Setting
+from measurement.models import Measurement
 from .message import ActionType, MessageQueue
 from .measure import MeasureInfo, MeasureQueue
 
@@ -83,6 +84,9 @@ class TaskHandler(threading.Thread):
             self._wlm.set_active_channel(channel=measure.channel)
             frequency = self._wlm.get_frequency(channel=measure.channel, error_on_invalid=False,
                                            wait=True, timeout=3)
-            deadline = datetime.now() + self._channel_to_setting[channel].period
+            setting = self._channel_to_setting[channel]
+            deadline = datetime.now() + setting.period
             next_measure = MeasureInfo(channel, deadline)
             self._measure_queue.push(next_measure)
+            measure_record = Measurement(setting=setting, frequency=frequency)
+            measure_record.save()
