@@ -22,7 +22,6 @@ def get_running_status(ch: int) -> tuple[bool, bool]:
     )  # latest operations for each channel and user
     is_wlm_running = any(op.on for op in latest_operations)
     is_channel_running = any(op.channel.channel == ch and op.on for op in latest_operations)
-    print(is_wlm_running, is_channel_running)
     return is_wlm_running, is_channel_running
 
 
