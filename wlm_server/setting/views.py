@@ -25,22 +25,23 @@ def handle_info(request, ch: int):
     message_queue: MessageQueue = settings.MESSAGE_QUEUE
     latest_setting = settings.CHANNEL_CACHE.get_setting(ch)
     exposure, period = latest_setting.exposure, latest_setting.period
+    update_exposure = False
     notif = {}
     req_data = request.data.copy()
     if 'exposure' in req_data:
         exposure_s = req_data['exposure']
         exposure = timedelta(seconds=exposure_s)
-        message = MessageInfo(ActionType.EXPOSURE, ch, {'exposure': exposure})
-        message_queue.push(message)
+        update_exposure = True
         notif['exposure'] = exposure_s
     if 'period' in req_data:
         period_s = req_data['period']
         period = timedelta(seconds=period_s)
-        message = MessageInfo(ActionType.PERIOD, ch, {'period': period})
-        message_queue.push(message)
         notif['period'] = period_s
     setting = Setting(channel=channel, exposure=exposure, period=period)
     setting.save()
+    message = MessageInfo(ActionType.SETTING, ch,
+                          {'setting': setting, 'update_exposure': update_exposure})
+    message_queue.push(message)
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
         f'channel_{ch}_setting', {'type': 'notify', 'message': json.dumps(notif)}
