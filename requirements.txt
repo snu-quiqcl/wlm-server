@@ -4,4 +4,5 @@ pylint==3.3.*
 pylint-django==2.6.*
 djangorestframework==3.15.*
 psycopg==3.2.*
+channels==4.2.*
 pylablib==1.4.*
