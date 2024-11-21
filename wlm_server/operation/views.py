@@ -9,6 +9,7 @@ from asgiref.sync import async_to_sync
 
 from operation.models import Operation
 from channel.models import Channel
+from setting.models import Setting
 from task.message import ActionType, MessageInfo, MessageQueue
 from task.handler import TaskHandler
 from utils import util
@@ -28,10 +29,17 @@ def handle_info(request, ch: int):
     on = req_data['on']
     operation = Operation(user=user, channel=channel, on=on)
     if on:
-        if not util.is_wlm_running():
-            task_handler = TaskHandler()
-            task_handler.start()
         if not util.is_channel_running(ch):
+            setting = (Setting.objects.filter(channel__channel=channel)
+                       .order_by('-created_at').first())
+            message = MessageInfo(ActionType.SETTING, ch,
+                                  {'setting': setting, 'update_exposure': True})
+            message_queue.push(message)
+            if not util.is_wlm_running():
+                message = MessageInfo(ActionType.START, ch, None)
+                message_queue.push(message)
+                task_handler = TaskHandler()
+                task_handler.start()
             message = MessageInfo(ActionType.OPERATE, ch, {'on': True})
             message_queue.push(message)
             notif = {'on': True}
