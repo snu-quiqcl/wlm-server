@@ -37,14 +37,15 @@ class TaskHandler(threading.Thread):
         self._wlm.open()
         self._wlm.set_read_mode('single')
 
+    def _start_wlm(self, channel: int):
+        self._wlm.set_active_channel(channel=channel)
+        self._wlm.start_measurement()
+
     def _stop_wlm(self):
         self._wlm.stop_measurement()
         self._wlm.close()
 
     def _start_channel_measurement(self, channel: int):
-        setting = Setting.objects.filter(channel__channel=channel).order_by('-created_at').first()
-        period = setting.period
-        self._channel_to_period[channel] = period
         measure = MeasureInfo(channel, datetime.now())
         self._measure_queue.push(measure)
 
@@ -61,7 +62,7 @@ class TaskHandler(threading.Thread):
                 data = message.data
                 match message.action:
                     case ActionType.START:
-                        pass
+                        self._start_wlm(channel)
                     case ActionType.STOP:
                         self._stop_wlm()
                         return
