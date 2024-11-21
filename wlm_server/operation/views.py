@@ -30,7 +30,7 @@ def get_running_status(ch: int) -> tuple[bool, bool]:
 def handle_info(request, ch: int):
     user = request.user
     channel = Channel.objects.get(channel=ch)
-    if user.team not in channel.teams.all():
+    if not channel.teams.contains(user.team):
         return HttpResponse(status=403)
     message_queue: MessageQueue = settings.MESSAGE_QUEUE
     req_data = request.data.copy()
