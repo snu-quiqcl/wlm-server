@@ -35,6 +35,7 @@ class TaskHandler(threading.Thread):
         config = Config.objects.first()
         self._wlm = WLM(config.wlm_version, config.wlm_dll_path, config.wlm_app_path)
         self._wlm.open()
+        self._wlm.set_read_mode('single')
 
     def _stop_wlm(self):
         self._wlm.stop_measurement()
@@ -74,4 +75,5 @@ class TaskHandler(threading.Thread):
                     case ActionType.PERIOD:
                         period = data['period']
                         self._channel_to_period[channel] = period
-            measure = self._measure_queue.pop()  # pylint: disable=unused-variable
+            measure = self._measure_queue.pop()
+
