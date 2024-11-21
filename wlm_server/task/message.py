@@ -7,7 +7,7 @@ from typing import Any
 
 class ActionType(enum.Enum):
     """Action type."""
-    CLOSE = 'close'
+    STOP = 'stop'
     OPERATE = 'operate'
     EXPOSURE = 'exposure'
     PERIOD = 'period'
@@ -23,7 +23,7 @@ class MessageInfo:
         data: Additional arguments for action.
 
     Actions:
-        CLOSE: Close the WLM connection.
+        STOP: Stop the WLM measurement and close the WLM connection.
           channel: None.
           data: None.
         OPERATE:

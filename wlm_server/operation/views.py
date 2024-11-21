@@ -51,6 +51,6 @@ def handle_info(request, ch: int):
                 f'channel_{ch}_operation', {'type': 'notify', 'message': json.dumps(notif)}
             )
         if not util.is_wlm_running():
-            message = MessageInfo(ActionType.CLOSE, None, None)
+            message = MessageInfo(ActionType.STOP, None, None)
             message_queue.push(message)
     return HttpResponse(status=200)

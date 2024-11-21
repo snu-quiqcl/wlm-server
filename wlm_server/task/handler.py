@@ -29,15 +29,14 @@ class TaskHandler(threading.Thread):
         self._message_queue: MessageQueue = settings.MESSAGE_QUEUE
         self._measure_queue: MeasureQueue = MeasureQueue()
         self._channel_to_period: dict[int, timedelta] = {}
-        self._open_connection()
+        self._connect_wlm()
 
-    def _open_connection(self):
+    def _connect_wlm(self):
         config = Config.objects.first()
         self._wlm = WLM(config.wlm_version, config.wlm_dll_path, config.wlm_app_path)
         self._wlm.open()
-        self._wlm.start_measurement()
 
-    def _close_connection(self):
+    def _stop_wlm(self):
         self._wlm.stop_measurement()
         self._wlm.close()
 
@@ -60,8 +59,8 @@ class TaskHandler(threading.Thread):
                 channel = message.channel
                 data = message.data
                 match message.action:
-                    case ActionType.CLOSE:
-                        self._close_connection()
+                    case ActionType.STOP:
+                        self._stop_wlm()
                         return
                     case ActionType.OPERATE:
                         on = data['on']
