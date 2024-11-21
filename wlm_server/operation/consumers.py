@@ -19,5 +19,13 @@ class OperationConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def notify(self, event: dict[str, str]):
+        """Notifies the operation change to the channels that belong to the same group.
+        
+        Args:
+            event: Dictionary with two keys.
+              type: Please refer to the documentation of Channels.
+              message: Dictionary with one key.
+                on: Updated operation status.
+        """
         message = event['message']
         await self.send(text_data=message)
