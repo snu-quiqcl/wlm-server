@@ -50,7 +50,7 @@ def handle_info(request, ch: int):
             async_to_sync(channel_layer.group_send)(
                 f'channel_{ch}_operation', {'type': 'notify', 'message': json.dumps(notif)}
             )
-        if not util.is_wlm_running():
-            message = MessageInfo(ActionType.STOP, None, None)
-            message_queue.push(message)
+            if not util.is_wlm_running():
+                message = MessageInfo(ActionType.STOP, None, None)
+                message_queue.push(message)
     return HttpResponse(status=200)
