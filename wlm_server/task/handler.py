@@ -28,7 +28,7 @@ class TaskHandler(threading.Thread):
         self._wlm: WLM
         self._message_queue: MessageQueue = settings.MESSAGE_QUEUE
         self._measure_queue: MeasureQueue = MeasureQueue()
-        self._channel_to_period: dict[int, timedelta] = {}
+        self._channel_to_setting: dict[int, Setting] = {}
         self._connect_wlm()
 
     def _connect_wlm(self):
@@ -60,6 +60,8 @@ class TaskHandler(threading.Thread):
                 channel = message.channel
                 data = message.data
                 match message.action:
+                    case ActionType.START:
+                        pass
                     case ActionType.STOP:
                         self._stop_wlm()
                         return
@@ -69,12 +71,11 @@ class TaskHandler(threading.Thread):
                             self._start_channel_measurement(channel)
                         else:
                             self._stop_channel_measurement(channel)
-                    case ActionType.EXPOSURE:
-                        exposure = data['exposure']
-                        self._set_channel_exposure(channel, exposure)
-                    case ActionType.PERIOD:
-                        period = data['period']
-                        self._channel_to_period[channel] = period
+                    case ActionType.SETTING:
+                        setting = data['setting']
+                        if data['update_exposure']:
+                            self._set_channel_exposure(channel, setting.exposure)
+                        self._channel_to_setting[channel] = setting
             measure = self._measure_queue.pop()
             channel, deadline = measure.channel, measure.deadline
             self._wlm.set_active_channel(channel=channel)
