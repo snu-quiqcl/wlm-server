@@ -76,4 +76,7 @@ class TaskHandler(threading.Thread):
                         period = data['period']
                         self._channel_to_period[channel] = period
             measure = self._measure_queue.pop()
-
+            channel, deadline = measure.channel, measure.deadline
+            self._wlm.set_active_channel(channel=channel)
+            frequency = self._wlm.get_frequency(channel=channel, error_on_invalid=False,
+                                           wait=True, timeout=3)
