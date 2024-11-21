@@ -7,10 +7,10 @@ from typing import Any
 
 class ActionType(enum.Enum):
     """Action type."""
+    START = 'start'
     STOP = 'stop'
     OPERATE = 'operate'
-    EXPOSURE = 'exposure'
-    PERIOD = 'period'
+    SETTING = 'setting'
 
 
 @dataclasses.dataclass
@@ -23,6 +23,9 @@ class MessageInfo:
         data: Additional arguments for action.
 
     Actions:
+        START: Switch to the target channel and start the WLM measurement.
+          channel: Target channel.
+          data: None.
         STOP: Stop the WLM measurement and close the WLM connection.
           channel: None.
           data: None.
@@ -31,14 +34,11 @@ class MessageInfo:
           data:
             on (bool): If True, start measurement of the given channel. Otherwise, stop measurement
               of the given channel.
-        EXPOSURE:
+        SETTING:
           channel: Target channel.
           data:
-            exposure (datetime.timedelta): New exposure time.
-        PERIOD:
-          channel: Target channel.
-          data:
-            period (datetime.timedelta): New period.
+            setting (setting.models.Setting): New setting.
+            update_exposure (bool): If True, update the exposure time in task handler.
     """
     action: ActionType
     channel: int | None
