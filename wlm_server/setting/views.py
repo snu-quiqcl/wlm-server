@@ -13,7 +13,10 @@ from task.message import ActionType, MessageInfo, MessageQueue
 @api_view(['POST'])
 def handle_info(request, ch: int):
     user = request.user
-    channel = Channel.objects.get(channel=ch)
+    try:
+        channel = Channel.objects.get(channel=ch)
+    except Channel.DoesNotExist:
+        return HttpResponse(status=404)
     if user.team not in channel.teams.all():
         return HttpResponse(status=403)
     message_queue: MessageQueue = settings.MESSAGE_QUEUE

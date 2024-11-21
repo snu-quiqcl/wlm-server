@@ -29,7 +29,10 @@ def get_running_status(ch: int) -> tuple[bool, bool]:
 @api_view(['POST'])
 def handle_info(request, ch: int):
     user = request.user
-    channel = Channel.objects.get(channel=ch)
+    try:
+        channel = Channel.objects.get(channel=ch)
+    except Channel.DoesNotExist:
+        return HttpResponse(status=404)
     if not channel.teams.contains(user.team):
         return HttpResponse(status=403)
     message_queue: MessageQueue = settings.MESSAGE_QUEUE
