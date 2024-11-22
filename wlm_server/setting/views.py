@@ -17,7 +17,7 @@ def handle_info(request, ch: int):
         channel = Channel.objects.get(channel=ch)
     except Channel.DoesNotExist:
         return HttpResponse(status=404)
-    if user.team not in channel.teams.all():
+    if not channel.teams.contains(user.team):
         return HttpResponse(status=403)
     message_queue: MessageQueue = settings.MESSAGE_QUEUE
     latest_setting = Setting.objects.filter(channel__channel=ch).order_by('-created_at').first()
