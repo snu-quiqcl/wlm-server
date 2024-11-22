@@ -8,10 +8,10 @@ class Calibration(models.Model):
         on_delete=models.PROTECT,
         related_name='calib_history',
     )
-    occured_at = models.DateTimeField(auto_now_add=True)
+    occurred_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return (
             f'User: {self.user}, '
-            f'Occured at: {self.occured_at}'
+            f'Occurred at: {self.occurred_at}'
         )

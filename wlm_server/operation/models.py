@@ -15,12 +15,12 @@ class Operation(models.Model):
         related_name='operation_history',
     )
     on = models.BooleanField()
-    occured_at = models.DateTimeField(auto_now_add=True)
+    occurred_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return (
             f'User: {self.user}, '
             f'Channel: {self.channel}, '
             f'On: {self.on}, '
-            f'Occured at: {self.occured_at}'
+            f'Occurred at: {self.occurred_at}'
         )

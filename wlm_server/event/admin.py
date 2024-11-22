@@ -8,12 +8,12 @@ class EventAdmin(admin.ModelAdmin):
         (
             None,
             {
-                'fields': ['category', 'content', 'occured_at'],
+                'fields': ['category', 'content', 'occurred_at'],
             },
         ),
     ]
-    list_display = ['id', 'category', 'content', 'occured_at']
+    list_display = ['id', 'category', 'content', 'occurred_at']
     list_filter = ['category']
     search_fields = ['category', 'content']
-    ordering = ['occured_at']
-    readonly_fields = ['occured_at']
+    ordering = ['occurred_at']
+    readonly_fields = ['occurred_at']
