@@ -1,9 +1,12 @@
 """Module for task handler with WLM."""
 
 import threading
+import json
 from datetime import datetime, timedelta
 
 from django.conf import settings
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 from pylablib.devices.HighFinesse.wlm import WLM
 
 from config.models import Config
@@ -82,14 +85,21 @@ class TaskHandler(threading.Thread):
             if measure is None:
                 continue
             self._wlm.set_active_channel(channel=measure.channel)
-            frequency = self._wlm.get_frequency(channel=measure.channel, error_on_invalid=False,
-                                                wait=True, timeout=3)
+            frequency_or_error = self._wlm.get_frequency(
+                channel=measure.channel, error_on_invalid=False, wait=True, timeout=3)
             setting = self._channel_to_setting[channel]
             deadline = datetime.now() + setting.period
             next_measure = MeasureInfo(channel, deadline)
             self._measure_queue.push(next_measure)
-            if isinstance(frequency, float):
-                measure_record = Measurement(setting=setting, frequency=frequency)
+            if isinstance(frequency_or_error, float):
+                measure_record = Measurement(setting=setting, frequency=frequency_or_error)
+                notif = {'frequency': frequency_or_error}
             else:
-                measure_record = Measurement(setting=setting, error=frequency)
+                measure_record = Measurement(setting=setting, error=frequency_or_error)
+                notif = {'error': frequency_or_error}
             measure_record.save()
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f'channel_{measure.channel}_measurement',
+                {'type': 'notify', 'message': json.dumps(notif)}
+            )
