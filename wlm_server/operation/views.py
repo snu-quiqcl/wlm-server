@@ -30,7 +30,7 @@ def handle_info(request, ch: int):
     operation = Operation(user=user, channel=channel, on=on)
     if on:
         if not util.is_channel_running(ch):
-            setting = (Setting.objects.filter(channel__channel=channel)
+            setting = (Setting.objects.filter(channel=channel)
                        .order_by('-created_at').first())
             message = MessageInfo(ActionType.SETTING, ch,
                                   {'setting': setting, 'update_exposure': True})
