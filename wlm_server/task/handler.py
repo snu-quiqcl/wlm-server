@@ -83,10 +83,13 @@ class TaskHandler(threading.Thread):
                 continue
             self._wlm.set_active_channel(channel=measure.channel)
             frequency = self._wlm.get_frequency(channel=measure.channel, error_on_invalid=False,
-                                           wait=True, timeout=3)
+                                                wait=True, timeout=3)
             setting = self._channel_to_setting[channel]
             deadline = datetime.now() + setting.period
             next_measure = MeasureInfo(channel, deadline)
             self._measure_queue.push(next_measure)
-            measure_record = Measurement(setting=setting, frequency=frequency)
+            if isinstance(frequency, float):
+                measure_record = Measurement(setting=setting, frequency=frequency)
+            else:
+                measure_record = Measurement(setting=setting, error=frequency)
             measure_record.save()
