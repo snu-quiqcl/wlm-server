@@ -11,7 +11,7 @@ class OperationConsumer(AsyncWebsocketConsumer):
     # pylint: disable=attribute-defined-outside-init
     async def connect(self):
         self.ch = self.scope['url_route']['kwargs']['ch']
-        self.group_name = f'channel_{self.ch}'
+        self.group_name = f'channel_{self.ch}_operation'
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
 
