@@ -18,7 +18,7 @@ def get_running_status(ch: int) -> tuple[bool, bool]:
         Tuple with WLM running status and target channel running
     """
     latest_operations = (
-        Operation.objects.order_by('channel', 'user', '-occured_at').distinct('channel', 'user')
+        Operation.objects.order_by('channel', 'user', '-occurred_at').distinct('channel', 'user')
     )  # latest operations for each channel and user
     is_wlm_running = any(op.on for op in latest_operations)
     is_channel_running = any(op.channel.channel == ch and op.on for op in latest_operations)
