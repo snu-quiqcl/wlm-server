@@ -21,6 +21,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'wlm_server.settings')
 # pylint: disable=wrong-import-position
 from cache.channel import ChannelCache
 from operation.consumers import OperationConsumer
+from setting.consumers import SettingConsumer
 
 settings.CHANNEL_CACHE = ChannelCache()
 
@@ -31,6 +32,7 @@ application = ProtocolTypeRouter(
             AuthMiddlewareStack(
                 URLRouter([
                     path('ws/operation/<int:ch>/', OperationConsumer.as_asgi()),
+                    path('ws/setting/<int:ch>/', SettingConsumer.as_asgi()),
                 ])
             )
         ),
