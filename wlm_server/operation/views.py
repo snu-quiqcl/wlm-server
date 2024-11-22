@@ -54,7 +54,7 @@ def handle_info(request, ch: int):
             notif = {'on': True}
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
-                f'channel_{ch}', {'type': 'notify', 'message': json.dumps(notif)}
+                f'channel_{ch}_operation', {'type': 'notify', 'message': json.dumps(notif)}
             )
         operation.save()
     else:
@@ -66,7 +66,7 @@ def handle_info(request, ch: int):
             notif = {'on': False}
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
-                f'channel_{ch}', {'type': 'notify', 'message': json.dumps(notif)}
+                f'channel_{ch}_operation', {'type': 'notify', 'message': json.dumps(notif)}
             )
         if not is_wlm_running:
             message = MessageInfo(ActionType.CLOSE, None, None)
