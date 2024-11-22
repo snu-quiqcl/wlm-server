@@ -33,6 +33,7 @@ class TaskHandler(threading.Thread):
         self._message_queue: MessageQueue = settings.MESSAGE_QUEUE
         self._measure_queue: MeasureQueue = MeasureQueue()
         self._channel_to_setting: dict[int, Setting] = {}
+        self._active_channel: int | None = None
         self._connect_wlm()
 
     def _connect_wlm(self):
@@ -42,7 +43,7 @@ class TaskHandler(threading.Thread):
         self._wlm.set_read_mode('single')
 
     def _start_wlm(self, channel: int):
-        self._wlm.set_active_channel(channel=channel)
+        self._switch(channel)
         self._wlm.start_measurement()
 
     def _stop_wlm(self):
@@ -58,6 +59,11 @@ class TaskHandler(threading.Thread):
 
     def _set_channel_exposure(self, channel: int, exposure: timedelta):
         self._wlm.set_exposure(exposure=exposure.total_seconds(), channel=channel)
+
+    def _switch(self, channel: int):
+        if channel != self._active_channel:
+            self._wlm.set_active_channel(channel=channel)
+            self._active_channel = channel
 
     def run(self):
         while True:
@@ -84,7 +90,7 @@ class TaskHandler(threading.Thread):
             measure = self._measure_queue.pop()
             if measure is None:
                 continue
-            self._wlm.set_active_channel(channel=measure.channel)
+            self._switch(measure.channel)
             frequency_or_error = self._wlm.get_frequency(
                 channel=measure.channel, error_on_invalid=False, wait=True, timeout=3)
             setting = self._channel_to_setting[channel]
