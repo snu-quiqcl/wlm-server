@@ -17,3 +17,16 @@ class SettingConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    async def notify(self, event: dict[str, str]):
+        """Notifies the operation change to the channels that belong to the same group.
+        
+        Args:
+            event: Dictionary with two keys.
+              type: Please refer to the documentation of Channels.
+              message: Dictionary with up to two keys.
+                exposure: Updated exposure time in seconds.
+                period: Updated period in seconds.
+        """
+        message = event['message']
+        await self.send(text_data=message)
