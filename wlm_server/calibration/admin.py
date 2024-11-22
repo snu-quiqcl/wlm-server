@@ -8,12 +8,12 @@ class CalibrationAdmin(admin.ModelAdmin):
         (
             None,
             {
-                'fields': ['user', 'occured_at'],
+                'fields': ['user', 'occurred_at'],
             },
         ),
     ]
-    list_display = ['id', 'user', 'occured_at']
+    list_display = ['id', 'user', 'occurred_at']
     list_filter = ['user']
     search_fields = ['user']
-    ordering = ['occured_at']
-    readonly_fields = ['occured_at']
+    ordering = ['occurred_at']
+    readonly_fields = ['occurred_at']

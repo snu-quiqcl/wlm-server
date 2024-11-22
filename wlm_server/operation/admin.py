@@ -8,12 +8,12 @@ class OperationAdmin(admin.ModelAdmin):
         (
             None,
             {
-                'fields': ['user', 'channel', 'on', 'occured_at'],
+                'fields': ['user', 'channel', 'on', 'occurred_at'],
             },
         ),
     ]
-    list_display = ['id', 'user', 'channel', 'on', 'occured_at']
+    list_display = ['id', 'user', 'channel', 'on', 'occurred_at']
     list_filter = ['user', 'channel', 'on']
     search_fields = ['user']
-    ordering = ['occured_at']
-    readonly_fields = ['occured_at']
+    ordering = ['occurred_at']
+    readonly_fields = ['occurred_at']

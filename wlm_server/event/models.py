@@ -11,11 +11,11 @@ class Event(models.Model):
 
     category = models.CharField(max_length=2, choices=EventType, default=EventType.GENERAL)
     content = models.CharField(max_length=200)
-    occured_at = models.DateTimeField(auto_now_add=True)
+    occurred_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return (
             f'Category: {self.category}, '
             f'Content: {self.content}, '
-            f'Occured at: {self.occured_at}'
+            f'Occurred at: {self.occurred_at}'
         )
