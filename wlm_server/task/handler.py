@@ -24,6 +24,7 @@ class TaskHandler(threading.Thread):
 
     def __init__(self):
         super().__init__()
+        self.daemon = True
         self._wlm: WLM
         self._message_queue: MessageQueue = settings.MESSAGE_QUEUE
         self._measure_queue: MeasureQueue = MeasureQueue()
@@ -41,7 +42,7 @@ class TaskHandler(threading.Thread):
         self._wlm.close()
 
     def _start_channel_measurement(self, channel: int):
-        setting = Setting.objects.filter(channel__name=channel).order_by('-created_at').first()
+        setting = Setting.objects.filter(channel__channel=channel).order_by('-created_at').first()
         period = setting.period
         self._channel_to_period[channel] = period
         measure = MeasureInfo(channel, datetime.now())
