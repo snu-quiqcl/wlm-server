@@ -17,3 +17,16 @@ class MeasurementConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    async def notify(self, event: dict[str, str]):
+        """Notifies the measurement to the channels that belong to the same group.
+        
+        Args:
+            event: Dictionary with two keys.
+              type: Please refer to the documentation of Channels.
+              message: Dictionary with either of two keys.
+                frequency: Measured frequency in Hz.
+                error: Occurred error code. Please refer to the documentation of pylablib.
+        """
+        message = event['message']
+        await self.send(text_data=message)
