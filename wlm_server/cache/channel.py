@@ -43,7 +43,7 @@ class ChannelCache:
         """
         self._channel_to_setting[setting.channel.channel] = setting
 
-    def get_operation(self, channel: int) -> dict[str, Operation]:
+    def get_operations(self, channel: int) -> dict[str, Operation]:
         """Returns the latest operation status for the given channel.
         
         Args:
