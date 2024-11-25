@@ -1,1 +1,24 @@
 """Module for caching the channel status."""
+
+from collections import defaultdict
+
+from operation.models import Operation
+from setting.models import Setting
+
+class ChannelCache:
+    """Cache for channel status."""
+
+    def __init__(self):
+        # outer key: Channel__channel, inner key: User__username
+        self._channel_to_operation: defaultdict[int, dict[str, Operation]] = defaultdict(dict)
+        # key: Channel__channel
+        self._channel_to_setting: dict[int, Setting] = {}
+        self.load()
+
+    def load(self):
+        """Loads all channels status."""
+        operations = (
+            Operation.objects.order_by('channel', 'user', '-occurred_at').distinct('channel', 'user')
+        )
+        for operation in operations:
+            self._channel_to_operation[operation.channel.channel][operation.user.username] = operation
