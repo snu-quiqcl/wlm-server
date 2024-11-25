@@ -17,9 +17,8 @@ class ChannelCache:
 
     def load(self):
         """Loads all channels status."""
-        operations = (
-            Operation.objects.order_by('channel', 'user', '-occurred_at').distinct('channel', 'user')
-        )
+        operations = (Operation.objects.order_by('channel', 'user', '-occurred_at')
+                      .distinct('channel', 'user'))
         for operation in operations:
             (self._channel_to_operation
              [operation.channel.channel][operation.user.username]) = operation
