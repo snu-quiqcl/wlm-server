@@ -143,3 +143,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'user.User'
 
 MESSAGE_QUEUE = MessageQueue()
+
+CHANNEL_CACHE = None
