@@ -14,7 +14,4 @@ def is_channel_running(channel: int) -> bool:
 
 def is_wlm_running() -> bool:
     """Returns whether the WLM is currently running."""
-    for channel in Channel.objects.all():
-        if is_channel_running(channel.channel):
-            return True
-    return False
+    return any(is_channel_running(channel.channel) for channel in Channel.objects.all())
