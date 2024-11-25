@@ -21,4 +21,8 @@ class ChannelCache:
             Operation.objects.order_by('channel', 'user', '-occurred_at').distinct('channel', 'user')
         )
         for operation in operations:
-            self._channel_to_operation[operation.channel.channel][operation.user.username] = operation
+            (self._channel_to_operation
+             [operation.channel.channel][operation.user.username]) = operation
+        settings = Setting.objects.order_by('channel', '-created_at').distinct('channel')
+        for setting in settings:
+            self._channel_to_setting[setting.channel.channel] = setting
