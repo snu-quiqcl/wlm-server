@@ -37,3 +37,14 @@ class ChannelCache:
             Dictionary with user name as the key and the latest operation status as the value.
         """
         return self._channel_to_operation[channel]
+
+    def get_setting(self, channel: int) -> Setting:
+        """Returns the latest setting for the given channel.
+        
+        Args:
+            channel: Target channel.
+
+        Returns:
+            The latest setting.
+        """
+        return self._channel_to_setting[channel]
