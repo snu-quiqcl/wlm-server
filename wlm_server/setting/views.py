@@ -20,7 +20,7 @@ def handle_info(request, ch: int):
     if not channel.teams.contains(user.team):
         return HttpResponse(status=403)
     message_queue: MessageQueue = settings.MESSAGE_QUEUE
-    latest_setting = Setting.objects.filter(channel__channel=ch).order_by('-created_at').first()
+    latest_setting = settings.CHANNEL_CACHE.get_setting(ch)
     if latest_setting is None:
         exposure, period = None, None
     else:
