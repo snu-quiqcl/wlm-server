@@ -26,3 +26,14 @@ class ChannelCache:
         settings = Setting.objects.order_by('channel', '-created_at').distinct('channel')
         for setting in settings:
             self._channel_to_setting[setting.channel.channel] = setting
+
+    def get_operation(self, channel: int) -> dict[str, Operation]:
+        """Returns the latest operation status for the given channel.
+        
+        Args:
+            channel: Target channel.
+
+        Returns:
+            Dictionary with user name as the key and the latest operation status as the value.
+        """
+        return self._channel_to_operation[channel]
