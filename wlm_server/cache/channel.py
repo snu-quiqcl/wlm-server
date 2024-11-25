@@ -27,6 +27,22 @@ class ChannelCache:
         for setting in settings:
             self._channel_to_setting[setting.channel.channel] = setting
 
+    def set_operation(self, operation: Operation):
+        """Stores the given operation as the latest.
+        
+        Args:
+            operation: The latest operation.
+        """
+        self._channel_to_operation[operation.channel.channel][operation.user.username] = operation
+
+    def set_setting(self, setting: Setting):
+        """Stores the given setting as the latest.
+        
+        Args:
+            setting: The latest setting.
+        """
+        self._channel_to_setting[setting.channel.channel] = setting
+
     def get_operation(self, channel: int) -> dict[str, Operation]:
         """Returns the latest operation status for the given channel.
         
