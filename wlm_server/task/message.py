@@ -29,12 +29,12 @@ class MessageInfo:
         STOP: Stop the WLM measurement and close the WLM connection.
           channel: None.
           data: None.
-        OPERATE:
+        OPERATE: Start or stop the measurement of a specific channel.
           channel: Target channel.
           data:
             on (bool): If True, start measurement of the given channel. Otherwise, stop measurement
               of the given channel.
-        SETTING:
+        SETTING: Update the setting of a specific channel.
           channel: Target channel.
           data:
             setting (setting.models.Setting): New setting.
