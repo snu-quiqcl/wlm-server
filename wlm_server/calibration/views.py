@@ -16,8 +16,8 @@ def calibrate(request):
     channel, error_code = util.verify_channel_access(user, config.calib_ch)
     if channel is None:
         return HttpResponse(status=error_code)
-    if util.is_wlm_running:
-        return HttpResponse(409)
+    if util.is_wlm_running():
+        return HttpResponse(status=409)
     message_queue: MessageQueue = settings.MESSAGE_QUEUE
     task_handler = TaskHandler()
     task_handler.start()
