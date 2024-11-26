@@ -14,7 +14,7 @@ from task.message import ActionType, MessageInfo, MessageQueue
 
 @login_required
 @api_view(['POST'])
-def handle_info(request, ch: int):
+def handle_info(request, ch: int):  # pylint: disable=too-many-locals
     user = request.user
     try:
         channel = Channel.objects.get(channel=ch)

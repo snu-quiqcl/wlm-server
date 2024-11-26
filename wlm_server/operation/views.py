@@ -9,7 +9,6 @@ from asgiref.sync import async_to_sync
 
 from operation.models import Operation
 from channel.models import Channel
-from setting.models import Setting
 from task.message import ActionType, MessageInfo, MessageQueue
 from task.handler import TaskHandler
 from utils import util
