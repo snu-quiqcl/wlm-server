@@ -9,19 +9,16 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 from setting.models import Setting
-from channel.models import Channel
 from task.message import ActionType, MessageInfo, MessageQueue
+from utils import util
 
 @login_required
 @api_view(['POST'])
 def handle_info(request, ch: int):  # pylint: disable=too-many-locals
     user = request.user
-    try:
-        channel = Channel.objects.get(channel=ch)
-    except Channel.DoesNotExist:
-        return HttpResponse(status=404)
-    if not channel.teams.contains(user.team):
-        return HttpResponse(status=403)
+    channel, error_code = util.verify_channel_access(user, ch)
+    if channel is None:
+        return HttpResponse(status=error_code)
     message_queue: MessageQueue = settings.MESSAGE_QUEUE
     latest_setting = settings.CHANNEL_CACHE.get_setting(ch)
     exposure, period = latest_setting.exposure, latest_setting.period

@@ -8,7 +8,6 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 from operation.models import Operation
-from channel.models import Channel
 from task.message import ActionType, MessageInfo, MessageQueue
 from task.handler import TaskHandler
 from utils import util
@@ -17,12 +16,9 @@ from utils import util
 @api_view(['POST'])
 def handle_info(request, ch: int):
     user = request.user
-    try:
-        channel = Channel.objects.get(channel=ch)
-    except Channel.DoesNotExist:
-        return HttpResponse(status=404)
-    if not channel.teams.contains(user.team):
-        return HttpResponse(status=403)
+    channel, error_code = util.verify_channel_access(user, ch)
+    if channel is None:
+        return HttpResponse(status=error_code)
     message_queue: MessageQueue = settings.MESSAGE_QUEUE
     req_data = request.data.copy()
     on = req_data['on']
