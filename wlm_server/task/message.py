@@ -12,6 +12,7 @@ class ActionType(enum.Enum):
     STOP = 'stop'
     OPERATE = 'operate'
     SETTING = 'setting'
+    CALIB = 'calibrate'
 
 
 @dataclasses.dataclass
