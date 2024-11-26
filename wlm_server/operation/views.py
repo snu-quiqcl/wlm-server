@@ -59,4 +59,6 @@ def handle_info(request, ch: int):
             if not util.is_wlm_running():
                 message = MessageInfo(ActionType.STOP, None, None)
                 message_queue.push(message)
+                message = MessageInfo(ActionType.CLOSE, None, None)
+                message_queue.push(message)
     return HttpResponse(status=200)

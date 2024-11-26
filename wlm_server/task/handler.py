@@ -44,13 +44,15 @@ class TaskHandler(threading.Thread):
         self._wlm.open()
         self._wlm.set_read_mode('single')
 
+    def _close_wlm(self):
+        self._wlm.close()
+
     def _start_wlm(self, channel: int):
         self._switch(channel)
         self._wlm.start_measurement()
 
     def _stop_wlm(self):
         self._wlm.stop_measurement()
-        self._wlm.close()
 
     def _start_channel_measurement(self, channel: int):
         measure = MeasureInfo(channel, timezone.now())
@@ -73,6 +75,8 @@ class TaskHandler(threading.Thread):
                 channel = message.channel
                 data = message.data
                 match message.action:
+                    case ActionType.CLOSE:
+                        self._close_wlm()
                     case ActionType.START:
                         self._start_wlm(channel)
                     case ActionType.STOP:
