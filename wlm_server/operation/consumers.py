@@ -1,4 +1,8 @@
+import json
+
 from channels.generic.websocket import AsyncWebsocketConsumer
+
+from utils import util
 
 class OperationConsumer(AsyncWebsocketConsumer):
     """Consumer for notifying the operation change of a specific channel.
@@ -14,6 +18,7 @@ class OperationConsumer(AsyncWebsocketConsumer):
         self.group_name = f'channel_{self.ch}_operation'
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
+        await self.send(text_data=json.dumps({'on': util.is_channel_running(self.ch)}))
 
     async def disconnect(self, code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
