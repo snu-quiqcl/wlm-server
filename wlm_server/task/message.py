@@ -44,9 +44,10 @@ class MessageInfo:
           data:
             setting (setting.models.Setting): New setting.
             update_exposure (bool): If True, update the exposure time in task handler.
-        CALIB:
+        CALIB: Calibrate the WLM.
           channel: Reference channel.
           data:
+            exposure (datetime.timedelta): Exposure time.
             freq (float): Reference frequency in Hz.
     """
     action: ActionType
