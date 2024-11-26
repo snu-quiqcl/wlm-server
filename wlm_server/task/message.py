@@ -44,6 +44,10 @@ class MessageInfo:
           data:
             setting (setting.models.Setting): New setting.
             update_exposure (bool): If True, update the exposure time in task handler.
+        CALIB:
+          channel: Reference channel.
+          data:
+            freq (float): Reference frequency in Hz.
     """
     action: ActionType
     channel: int | None
