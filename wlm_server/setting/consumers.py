@@ -1,3 +1,6 @@
+import json
+
+from django.conf import settings
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 class SettingConsumer(AsyncWebsocketConsumer):
@@ -14,6 +17,9 @@ class SettingConsumer(AsyncWebsocketConsumer):
         self.group_name = f'channel_{self.ch}_setting'
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
+        setting = settings.CHANNEL_CACHE.get_setting(self.ch)
+        await self.send(text_data=json.dumps({'exposure': setting.exposure.total_seconds(),
+                                              'period': setting.period.total_seconds()}))
 
     async def disconnect(self, code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
