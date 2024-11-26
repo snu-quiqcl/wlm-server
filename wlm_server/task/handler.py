@@ -69,10 +69,8 @@ class TaskHandler(threading.Thread):
             self._wlm.set_active_channel(channel=channel)
             self._active_channel = channel
 
-    def _calibrate(self):
-        config = Config.objects.first()
-        self._wlm.calibrate(
-            source_type='other', source_frequency=config.calib_freq, channel=config.calib_ch)
+    def _calibrate(self, channel: int, frequency: float):
+        self._wlm.calibrate(source_type='other', source_frequency=frequency, channel=channel)
 
     def run(self):
         while True:
@@ -99,7 +97,7 @@ class TaskHandler(threading.Thread):
                             self._set_channel_exposure(channel, setting.exposure)
                         self._channel_to_setting[channel] = setting
                     case ActionType.CALIB:
-                        self._calibrate()
+                        self._calibrate(channel, data['freq'])
             measure = self._measure_queue.pop()
             if measure is None:
                 continue
