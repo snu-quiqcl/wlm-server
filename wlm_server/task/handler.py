@@ -90,9 +90,10 @@ class TaskHandler(threading.Thread):
             measure = self._measure_queue.pop()
             if measure is None:
                 continue
-            self._switch(measure.channel)
+            channel = measure.channel
+            self._switch(channel)
             frequency_or_error = self._wlm.get_frequency(
-                channel=measure.channel, error_on_invalid=False, wait=True, timeout=3)
+                channel=channel, error_on_invalid=False, wait=True, timeout=3)
             setting = self._channel_to_setting[channel]
             deadline = datetime.now() + setting.period
             next_measure = MeasureInfo(channel, deadline)
@@ -106,6 +107,6 @@ class TaskHandler(threading.Thread):
             measure_record.save()
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
-                f'channel_{measure.channel}_measurement',
+                f'channel_{channel}_measurement',
                 {'type': 'notify', 'message': json.dumps(notif)}
             )
