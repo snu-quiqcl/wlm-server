@@ -16,6 +16,4 @@ from cache.channel import ChannelCache
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'wlm_server.settings')
 
-settings.CHANNEL_CACHE = ChannelCache()
-
 application = get_wsgi_application()
