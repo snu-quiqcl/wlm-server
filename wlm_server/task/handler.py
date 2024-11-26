@@ -80,11 +80,11 @@ class TaskHandler(threading.Thread):
                 match message.action:
                     case ActionType.CLOSE:
                         self._close_wlm()
+                        return
                     case ActionType.START:
                         self._start_wlm(channel)
                     case ActionType.STOP:
                         self._stop_wlm()
-                        return
                     case ActionType.OPERATE:
                         on = data['on']
                         if on:
