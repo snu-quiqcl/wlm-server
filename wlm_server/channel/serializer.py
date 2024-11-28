@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from .models import Channel
 from operation.models import Operation
+from .models import Channel
 
 class ChannelInfoSerializer(serializers.ModelSerializer):
     operation = serializers.SerializerMethodField()
