@@ -13,9 +13,9 @@ class ChannelCache:
         self._channel_to_operation: defaultdict[int, dict[str, Operation]] = defaultdict(dict)
         # key: Channel__channel
         self._channel_to_setting: dict[int, Setting] = {}
-        self.load()
+        self._load()
 
-    def load(self):
+    def _load(self):
         """Loads all channels status."""
         operations = (Operation.objects.order_by('channel', 'user', '-occurred_at')
                       .distinct('channel', 'user'))
