@@ -10,5 +10,5 @@ from channel.serializer import ChannelInfoSerializer
 def handle_info(request):
     user = request.user
     channels = Channel.objects.filter(teams=user.team)
-    data = ChannelInfoSerializer(channels, many=True).data
+    data = ChannelInfoSerializer(channels, many=True, context={'user': user}).data
     return Response(data)
