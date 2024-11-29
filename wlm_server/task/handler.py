@@ -9,6 +9,7 @@ from django.conf import settings
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from pylablib.devices.HighFinesse.wlm import WLM
+from camel_converter import dict_to_camel
 
 from config.models import Config
 from setting.models import Setting
@@ -111,5 +112,5 @@ class TaskHandler(threading.Thread):
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 f'channel_{channel}_measurement',
-                {'type': 'notify', 'message': json.dumps(notif)}
+                {'type': 'notify', 'message': json.dumps(dict_to_camel(notif))}
             )
