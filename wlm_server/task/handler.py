@@ -2,8 +2,9 @@
 
 import threading
 import json
-from datetime import datetime, timedelta
+from datetime import timedelta
 
+from django.utils import timezone
 from django.conf import settings
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -51,7 +52,7 @@ class TaskHandler(threading.Thread):
         self._wlm.close()
 
     def _start_channel_measurement(self, channel: int):
-        measure = MeasureInfo(channel, datetime.now())
+        measure = MeasureInfo(channel, timezone.now())
         self._measure_queue.push(measure)
 
     def _stop_channel_measurement(self, channel: int):
@@ -95,7 +96,7 @@ class TaskHandler(threading.Thread):
             frequency_or_error = self._wlm.get_frequency(
                 channel=channel, error_on_invalid=False, wait=True, timeout=3)
             setting = self._channel_to_setting[channel]
-            deadline = datetime.now() + setting.period
+            deadline = timezone.now() + setting.period
             next_measure = MeasureInfo(channel, deadline)
             self._measure_queue.push(next_measure)
             notif = {}

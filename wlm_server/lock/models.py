@@ -1,6 +1,5 @@
-from datetime import datetime
-
 from django.db import models
+from django.utils import timezone
 
 from user.models import User
 from channel.models import Channel
@@ -8,7 +7,7 @@ from config.models import Config
 
 def get_default_expires_at():
     config = Config.objects.first()
-    return datetime.now() + config.lock_duration
+    return timezone.now() + config.lock_duration
 
 
 class Lock(models.Model):
