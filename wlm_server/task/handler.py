@@ -98,13 +98,15 @@ class TaskHandler(threading.Thread):
             deadline = datetime.now() + setting.period
             next_measure = MeasureInfo(channel, deadline)
             self._measure_queue.push(next_measure)
+            notif = {}
             if isinstance(frequency_or_error, float):
                 measure_record = Measurement(setting=setting, frequency=frequency_or_error)
-                notif = {'frequency': frequency_or_error}
+                notif['frequency'] = frequency_or_error
             else:
                 measure_record = Measurement(setting=setting, error=frequency_or_error)
-                notif = {'error': frequency_or_error}
+                notif['error'] = frequency_or_error
             measure_record.save()
+            notif['measured_at'] = measure_record.measured_at.isoformat()
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 f'channel_{channel}_measurement',
