@@ -12,4 +12,4 @@ def handle_info(request):
     user = request.user
     channels = Channel.objects.filter(teams=user.team)
     data = ChannelInfoSerializer(channels, many=True, context={'user': user}).data
-    return Response(dict_to_camel(data))
+    return Response([dict_to_camel(info) for info in data])
