@@ -100,7 +100,7 @@ class TaskHandler(threading.Thread):
             deadline = timezone.now() + setting.period
             next_measure = MeasureInfo(channel, deadline)
             self._measure_queue.push(next_measure)
-            notif = {}
+            notif = {'frequency': None, 'error': None}
             if isinstance(frequency_or_error, float):
                 measure_record = Measurement(setting=setting, frequency=frequency_or_error)
                 notif['frequency'] = frequency_or_error

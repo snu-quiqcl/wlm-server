@@ -24,10 +24,10 @@ class MeasurementConsumer(AsyncWebsocketConsumer):
         Args:
             event: Dictionary with two keys.
               type: Please refer to the documentation of Channels.
-              message: Dictionary with two keys.
-                One of the two:
-                  frequency: Measured frequency in Hz.
-                  error: Occurred error code. Please refer to the documentation of pylablib.
+              message: Dictionary with three keys.
+                frequency: Measured frequency in Hz. If an error occurs, it is set to None.
+                error: Occurred error code. Please refer to the documentation of pylablib. If no
+                  error occurs, it is set to None.
                 measured_at: Measured time in ISO 8601 format.
         """
         message = event['message']
