@@ -3,12 +3,16 @@ from django.conf import settings
 from user.models import User
 from channel.models import Channel
 
-def verify_channel_access(user: User, ch: int) -> tuple[Channel | None, int | None]:
+def verify_channel_access(
+    user: User, ch: int, check_lock: bool = True
+) -> tuple[Channel | None, int | None]:
     """Verifies if the user has permission to access the channel.
     
     Args:
         user: User requesting access.
         ch: Target channel.
+        check_lock: If True, it verifies if the user has a valid lock on the channel or the channel
+          is open. Otherwise, it skips the check.
 
     Returns:
         (channel, error_code):
@@ -22,6 +26,10 @@ def verify_channel_access(user: User, ch: int) -> tuple[Channel | None, int | No
         return None, 404
     if not channel.teams.contains(user.team):
         return None, 403
+    if check_lock:
+        lock = settings.CHANNEL_CACHE.get_lock(ch)
+        if lock is not None and lock.user != user:
+            return None, 409
     return channel, None
 
 
