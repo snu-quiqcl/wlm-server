@@ -2,8 +2,11 @@
 
 from collections import defaultdict
 
+from django.utils import timezone
+
 from operation.models import Operation
 from setting.models import Setting
+from lock.models import Lock
 
 class ChannelCache:
     """Cache for channel status."""
@@ -13,6 +16,8 @@ class ChannelCache:
         self._channel_to_operation: defaultdict[int, dict[str, Operation]] = defaultdict(dict)
         # key: Channel__channel
         self._channel_to_setting: dict[int, Setting] = {}
+        # key: Channel__channel
+        self._channel_to_lock: dict[int, Lock] = {}
         self._load()
 
     def _load(self):
@@ -25,6 +30,11 @@ class ChannelCache:
         settings = Setting.objects.order_by('channel', '-created_at').distinct('channel')
         for setting in settings:
             self._channel_to_setting[setting.channel.channel] = setting
+        locks = (Lock.objects.order_by('channel', '-started_at').distinct('channel'))
+        now = timezone.now()
+        for lock in locks:
+            if lock.expires_at > now:
+                self._channel_to_lock[lock.channel.channel] = lock
 
     def set_operation(self, operation: Operation):
         """Stores the given operation as the latest.
@@ -41,6 +51,22 @@ class ChannelCache:
             setting: The latest setting.
         """
         self._channel_to_setting[setting.channel.channel] = setting
+
+    def set_lock(self, lock: Lock):
+        """Stores the given lock as the latest.
+        
+        Args:
+            lock: The latest lock.
+        """
+        self._channel_to_lock[lock.channel.channel] = lock
+
+    def delete_lock(self, channel: int):
+        """Deletes the lock from the given channel.
+        
+        Args:
+            channel: Target channel.
+        """
+        del self._channel_to_lock[channel]
 
     def get_operations(self, channel: int) -> dict[str, Operation]:
         """Returns the latest operation status for the given channel.
@@ -63,3 +89,14 @@ class ChannelCache:
             The latest setting.
         """
         return self._channel_to_setting[channel]
+
+    def get_lock(self, channel: int) -> Lock | None:
+        """Returns the latest lock for the given channel.
+        
+        Args:
+            channel: Target channel.
+
+        Returns:
+            The latest lock. If there is no valid lock, it returns None.
+        """
+        return self._channel_to_lock.get(channel, None)
