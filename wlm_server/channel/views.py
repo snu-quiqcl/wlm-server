@@ -11,5 +11,5 @@ from channel.serializer import ChannelInfoSerializer
 def handle_info(request):
     user = request.user
     channels = Channel.objects.filter(teams=user.team)
-    data = ChannelInfoSerializer(channels, many=True, context={'user': user}).data
+    data = ChannelInfoSerializer(channels, many=True, context={'username': user.username}).data
     return Response([dict_to_camel(info) for info in data])

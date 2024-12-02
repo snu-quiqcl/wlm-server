@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import serializers
 
 from operation.models import Operation
@@ -15,9 +16,10 @@ class ChannelInfoSerializer(serializers.ModelSerializer):
         )
 
     def get_in_use(self, obj: Channel):
-        user = self.context['user']
+        operations = settings.CHANNEL_CACHE.get_operations(obj.channel)
+        username = self.context['username']
         try:
-            operation = Operation.objects.filter(user=user, channel=obj).latest('occurred_at')
-        except Operation.DoesNotExist:
+            operation = operations[username]
+        except KeyError:
             return False
         return operation.on
