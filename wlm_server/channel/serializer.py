@@ -1,7 +1,6 @@
 from django.conf import settings
 from rest_framework import serializers
 
-from operation.models import Operation
 from .models import Channel
 
 class ChannelInfoSerializer(serializers.ModelSerializer):
