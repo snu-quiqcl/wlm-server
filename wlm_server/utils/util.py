@@ -24,6 +24,7 @@ def verify_channel_access(user: User, ch: int) -> tuple[Channel | None, int | No
         return None, 403
     return channel, None
 
+
 def is_channel_running(channel: int) -> bool:
     """Returns whether the given channel is currently running.
     
