@@ -23,5 +23,6 @@ urlpatterns = [
     path('setting/', include('setting.urls')),
     path('operation/', include('operation.urls')),
     path('calibration/', include('calibration.urls')),
+    path('lock/', include('lock.urls')),
     path('admin/', admin.site.urls),
 ]
