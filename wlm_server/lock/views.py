@@ -17,9 +17,6 @@ def try_lock(request, ch: int):
     channel, error_code = util.verify_channel_access(user, ch)
     if channel is None:
         return HttpResponse(status=error_code)
-    latest_lock = settings.CHANNEL_CACHE.get_lock(ch)
-    if latest_lock is not None:
-        return HttpResponse(status=409)
     lock = Lock(user=user, channel=channel)
     lock.save()
     notif = {'locked': True, 'username': user.username}
