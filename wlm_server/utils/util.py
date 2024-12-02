@@ -11,9 +11,10 @@ def verify_channel_access(user: User, ch: int) -> tuple[Channel | None, int | No
         ch: Target channel.
 
     Returns:
-        (channel, error_code): channel is the corresponding channel object. If an error occurs, it
-          is set to None. error_code is the HTTP status code for the occured error. If there is no
-          error, it is set to None.
+        (channel, error_code):
+          channel: Target channel object. If an error occurs, it is set to None.
+          error_code: HTTP status code for the occured error. If there is no error, it is set to
+            None.
     """
     try:
         channel = Channel.objects.get(channel=ch)
