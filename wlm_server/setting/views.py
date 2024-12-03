@@ -9,6 +9,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 from setting.models import Setting
+from event.models import Event
 from task.message import ActionType, MessageInfo, MessageQueue
 from utils import util
 
@@ -24,6 +25,7 @@ def handle_info(request, ch: int):  # pylint: disable=too-many-locals
     exposure, period = latest_setting.exposure, latest_setting.period
     update_exposure = False
     notif = {}
+    event_content = []
     req_data = request.data.copy()
     if 'exposure' in req_data:
         exposure_s = req_data['exposure']
@@ -32,10 +34,12 @@ def handle_info(request, ch: int):  # pylint: disable=too-many-locals
         exposure = timedelta(seconds=exposure_s)
         update_exposure = True
         notif['exposure'] = exposure_s
+        event_content.append(f'exposure: {exposure_s * 1e3:.0f}ms')
     if 'period' in req_data:
         period_s = req_data['period']
         period = timedelta(seconds=period_s)
         notif['period'] = period_s
+        event_content.append(f'period: {period_s:.3f}s')
     setting = Setting(channel=channel, exposure=exposure, period=period)
     setting.save()
     message = MessageInfo(ActionType.SETTING, ch,
@@ -44,5 +48,9 @@ def handle_info(request, ch: int):  # pylint: disable=too-many-locals
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
         f'channel_{ch}_setting', {'type': 'notify', 'message': json.dumps(notif)}
+    )
+    util.record_event(
+        Event.EventType.SETTING,
+        f'{user.username} updated the setting of channel {ch} ({', '.join(event_content)}).'
     )
     return HttpResponse(status=200)

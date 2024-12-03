@@ -9,6 +9,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 from lock.models import Lock
+from event.models import Event
 from utils import util
 
 @login_required
@@ -25,6 +26,7 @@ def try_lock(request, ch: int):
     async_to_sync(channel_layer.group_send)(
         f'channel_{ch}_lock', {'type': 'notify', 'message': json.dumps(notif)}
     )
+    util.record_event(Event.EventType.LOCK, f'{user.username} acquired the lock of channel {ch}.')
     return HttpResponse(status=200)
 
 
@@ -43,4 +45,5 @@ def release_lock(request, ch: int):
     async_to_sync(channel_layer.group_send)(
         f'channel_{ch}_lock', {'type': 'notify', 'message': json.dumps(notif)}
     )
+    util.record_event(Event.EventType.LOCK, f'{user.username} released the lock of channel {ch}.')
     return HttpResponse(status=200)
