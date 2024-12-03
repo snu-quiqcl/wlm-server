@@ -5,7 +5,7 @@ from .models import Channel
 
 class ChannelInfoSerializer(serializers.ModelSerializer):
     in_use = serializers.SerializerMethodField()
-    locked = serializers.SerializerMethodField()
+    has_lock = serializers.SerializerMethodField()
 
     class Meta:
         model = Channel
@@ -13,7 +13,7 @@ class ChannelInfoSerializer(serializers.ModelSerializer):
             'channel',
             'name',
             'in_use',
-            'locked',
+            'has_lock',
         )
 
     def get_in_use(self, obj: Channel):
@@ -25,7 +25,7 @@ class ChannelInfoSerializer(serializers.ModelSerializer):
             return False
         return operation.on
 
-    def get_locked(self, obj: Channel):
+    def get_has_lock(self, obj: Channel):
         lock = settings.CHANNEL_CACHE.get_lock(obj.channel)
         if lock is None:
             return False
