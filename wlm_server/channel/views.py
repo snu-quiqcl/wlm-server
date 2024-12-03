@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view
 from camel_converter import dict_to_camel
 
 from channel.models import Channel
-from wlm_server.channel.serializers import ChannelInfoSerializer
+from channel.serializers import ChannelInfoSerializer
 
 @login_required
 @api_view(['GET'])
