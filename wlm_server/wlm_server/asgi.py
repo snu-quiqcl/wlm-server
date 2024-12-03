@@ -24,6 +24,7 @@ from operation.consumers import OperationConsumer
 from setting.consumers import SettingConsumer
 from measurement.consumers import MeasurementConsumer
 from lock.consumers import LockConsumer
+from event.consumers import EventConsumer
 
 settings.CHANNEL_CACHE = ChannelCache()
 
@@ -37,6 +38,7 @@ application = ProtocolTypeRouter(
                     path('ws/setting/<int:ch>/', SettingConsumer.as_asgi()),
                     path('ws/measurement/<int:ch>/', MeasurementConsumer.as_asgi()),
                     path('ws/lock/<int:ch>/', LockConsumer.as_asgi()),
+                    path('ws/event/', EventConsumer.as_asgi()),
                 ])
             )
         ),
