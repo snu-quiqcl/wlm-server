@@ -20,7 +20,7 @@ def try_lock(request, ch: int):
         return HttpResponse(status=error_code)
     lock = Lock(user=user, channel=channel)
     lock.save()
-    notif = {'locked': True, 'username': user.username}
+    notif = {'locked': True, 'owner': user.username}
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
         f'channel_{ch}_lock', {'type': 'notify', 'message': json.dumps(notif)}
@@ -38,7 +38,7 @@ def release_lock(request, ch: int):
     lock = settings.CHANNEL_CACHE.get_lock(ch)
     lock.expires_at = timezone.now()
     lock.save()
-    notif = {'locked': False, 'username': None}
+    notif = {'locked': False, 'owner': None}
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
         f'channel_{ch}_lock', {'type': 'notify', 'message': json.dumps(notif)}

@@ -20,9 +20,9 @@ class LockConsumer(AsyncWebsocketConsumer):
         lock = settings.CHANNEL_CACHE.get_lock(self.ch)
         notif = {}
         if lock is None:
-            notif = {'locked': False, 'user': None}
+            notif = {'locked': False, 'owner': None}
         else:
-            notif = {'locked': True, 'username': lock.user.username}
+            notif = {'locked': True, 'owner': lock.user.username}
         await self.send(text_data=json.dumps(notif))
 
     async def disconnect(self, code):
@@ -36,7 +36,7 @@ class LockConsumer(AsyncWebsocketConsumer):
               type: Please refer to the documentation of Channels.
               message: Dictionary with two keys.
                 locked: Whether the channel is locked.
-                username: Name of the user holding the lock on the channel. If the channel is open,
+                owner: Username holding the lock on the channel. If the channel is open,
                   it is set to None.
         """
         message = event['message']
