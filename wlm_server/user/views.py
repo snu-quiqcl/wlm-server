@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
-from .serializer import UserInfoSerializer
+from .serializers import UserInfoSerializer
 
 @api_view(['POST'])
 def sign_in(request):

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from team.serializer import TeamInfoSerializer
+from wlm_server.team.serializers import TeamInfoSerializer
 from .models import User
 
 class UserInfoSerializer(serializers.ModelSerializer):
