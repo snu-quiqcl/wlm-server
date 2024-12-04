@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 from utils import util
@@ -18,7 +19,10 @@ class OperationConsumer(AsyncWebsocketConsumer):
         self.group_name = f'channel_{self.ch}_operation'
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
-        await self.send(text_data=json.dumps({'on': util.is_channel_running(self.ch)}))
+        on = util.is_channel_running(self.ch)
+        requesters = [op.user.username
+                      for op in settings.CHANNEL_CACHE.get_operations(self.ch).values() if op.on]
+        await self.send(text_data=json.dumps({'on': on, 'requesters': requesters}))
 
     async def disconnect(self, code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
