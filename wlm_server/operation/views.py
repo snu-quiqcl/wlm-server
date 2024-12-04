@@ -11,6 +11,7 @@ from operation.models import Operation
 from event.models import Event
 from task.message import ActionType, MessageInfo, MessageQueue
 from task.handler import TaskHandler
+from cache.channel import ChannelCache
 from utils import util
 
 @login_required
@@ -21,6 +22,7 @@ def handle_info(request, ch: int):
     if channel is None:
         return HttpResponse(status=error_code)
     message_queue: MessageQueue = settings.MESSAGE_QUEUE
+    channel_cache: ChannelCache = settings.CHANNEL_CACHE
     req_data = request.data.copy()
     on = req_data['on']
     operation = Operation(user=user, channel=channel, on=on)
@@ -28,7 +30,7 @@ def handle_info(request, ch: int):
         util.record_event(Event.EventType.OPERATION,
                           f'{user.username} requested measurement of channel {ch}.')
         if not util.is_channel_running(ch):
-            setting = settings.CHANNEL_CACHE.get_setting(ch)
+            setting = channel_cache.get_setting(ch)
             message = MessageInfo(ActionType.SETTING, ch,
                                   {'setting': setting, 'update_exposure': True})
             message_queue.push(message)
