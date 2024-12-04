@@ -31,6 +31,7 @@ class OperationConsumer(AsyncWebsocketConsumer):
               type: Please refer to the documentation of Channels.
               message: Dictionary with one key.
                 on: Updated operation status.
+                requesters: List of usernames requesting measurement.
         """
         message = event['message']
         await self.send(text_data=message)
