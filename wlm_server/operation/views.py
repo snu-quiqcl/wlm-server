@@ -45,7 +45,7 @@ def handle_info(request, ch: int):
             async_to_sync(channel_layer.group_send)(
                 f'channel_{ch}_operation', {'type': 'notify', 'message': json.dumps(notif)}
             )
-            util.record_event(Event.EventType.OPERATION, 'Measurement of channel {ch} started.')
+            util.record_event(Event.EventType.OPERATION, f'Measurement of channel {ch} started.')
         operation.save()
     else:
         util.record_event(Event.EventType.OPERATION,
@@ -59,7 +59,7 @@ def handle_info(request, ch: int):
             async_to_sync(channel_layer.group_send)(
                 f'channel_{ch}_operation', {'type': 'notify', 'message': json.dumps(notif)}
             )
-            util.record_event(Event.EventType.OPERATION, 'Measurement of channel {ch} stopped.')
+            util.record_event(Event.EventType.OPERATION, f'Measurement of channel {ch} stopped.')
             if not util.is_wlm_running():
                 message = MessageInfo(ActionType.STOP, None, None)
                 message_queue.push(message)
