@@ -42,11 +42,6 @@ def handle_info(request, ch: int):
                 util.record_event(Event.EventType.OPERATION, 'WLM started.')
             message = MessageInfo(ActionType.OPERATE, ch, {'on': True})
             message_queue.push(message)
-            notif = {'on': True}
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                f'channel_{ch}_operation', {'type': 'notify', 'message': json.dumps(notif)}
-            )
             util.record_event(Event.EventType.OPERATION, f'Measurement of channel {ch} started.')
         operation.save()
     else:
@@ -56,11 +51,6 @@ def handle_info(request, ch: int):
         if not util.is_channel_running(ch):
             message = MessageInfo(ActionType.OPERATE, ch, {'on': False})
             message_queue.push(message)
-            notif = {'on': False}
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                f'channel_{ch}_operation', {'type': 'notify', 'message': json.dumps(notif)}
-            )
             util.record_event(Event.EventType.OPERATION, f'Measurement of channel {ch} stopped.')
             if not util.is_wlm_running():
                 message = MessageInfo(ActionType.STOP, None, None)
@@ -68,4 +58,10 @@ def handle_info(request, ch: int):
                 message = MessageInfo(ActionType.CLOSE, None, None)
                 message_queue.push(message)
                 util.record_event(Event.EventType.OPERATION, 'WLM stopped.')
+    requesters = [op.user.username for op in channel_cache.get_operations(ch).values() if op.on]
+    notif = {'on': on, 'requesters': requesters}
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f'channel_{ch}_operation', {'type': 'notify', 'message': json.dumps(notif)}
+    )
     return HttpResponse(status=200)
