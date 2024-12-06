@@ -27,16 +27,16 @@ def handle_info(request, ch: int):  # pylint: disable=too-many-locals
     notif = {}
     event_content = []
     req_data = request.data.copy()
-    if 'exposure' in req_data:
-        exposure_s = req_data['exposure']
+    exposure_s = req_data.get('exposure', None)
+    period_s = req_data.get('period', None)
+    if exposure_s is not None:
         if exposure_s <= 0:
             return HttpResponse(status=422)
         exposure = timedelta(seconds=exposure_s)
         update_exposure = True
         notif['exposure'] = exposure_s
         event_content.append(f'exposure: {exposure_s * 1e3:.0f}ms')
-    if 'period' in req_data:
-        period_s = req_data['period']
+    if period_s is not None:
         period = timedelta(seconds=period_s)
         notif['period'] = period_s
         event_content.append(f'period: {period_s:.3f}s')
