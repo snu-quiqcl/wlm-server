@@ -1,4 +1,13 @@
+import json
+from datetime import timedelta
+
+from django.utils import timezone
 from channels.generic.websocket import AsyncWebsocketConsumer
+from asgiref.sync import sync_to_async
+from camel_converter import dict_to_camel
+
+from measurement.models import Measurement
+from measurement.serializers import MeasurementSerializer
 
 class MeasurementConsumer(AsyncWebsocketConsumer):
     """Consumer for notifying the measurement of a specific channel.
@@ -14,6 +23,17 @@ class MeasurementConsumer(AsyncWebsocketConsumer):
         self.group_name = f'channel_{self.ch}_measurement'
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
+        message = await sync_to_async(self.get_recent_measurements)()
+        await self.send(text_data=json.dumps(message))
+
+    def get_recent_measurements(self):
+        cutoff_time = timezone.now() - timedelta(minutes=10)
+        recent_measurements = Measurement.objects.filter(
+            setting__channel__channel=self.ch,
+            measured_at__gte=cutoff_time
+        ).order_by('measured_at')
+        return [dict_to_camel(measurement)
+                for measurement in MeasurementSerializer(recent_measurements, many=True).data]
 
     async def disconnect(self, code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
