@@ -1,4 +1,13 @@
+import json
+from datetime import timedelta
+
+from django.utils import timezone
 from channels.generic.websocket import AsyncWebsocketConsumer
+from asgiref.sync import sync_to_async
+from camel_converter import dict_to_camel
+
+from event.models import Event
+from event.serializers import EventSerializer
 
 class EventConsumer(AsyncWebsocketConsumer):
     """Consumer for notifying the event.
@@ -12,6 +21,13 @@ class EventConsumer(AsyncWebsocketConsumer):
         self.group_name = 'event'
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
+        message = await sync_to_async(self.get_recent_events)()
+        await self.send(text_data=json.dumps(message))
+
+    def get_recent_events(self):
+        cutoff_time = timezone.now() - timedelta(minutes=10)
+        recent_events = Event.objects.filter(occurred_at__gte=cutoff_time).order_by('occurred_at')
+        return [dict_to_camel(event) for event in EventSerializer(recent_events, many=True).data]
 
     async def disconnect(self, code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
