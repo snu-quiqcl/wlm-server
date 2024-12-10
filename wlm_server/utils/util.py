@@ -1,4 +1,7 @@
+import functools
 import json
+import threading
+from typing import Any, Callable
 
 from django.conf import settings
 from channels.layers import get_channel_layer
@@ -72,3 +75,13 @@ def record_event(category: Event.EventType, content: str):
         'event',
         {'type': 'notify', 'message': json.dumps(dict_to_camel(notif))}
     )
+
+
+def _synchronized(lock: threading.Lock) -> Callable:
+    def decorator(func: Callable) -> Callable:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs) -> Any:
+            with lock:
+                return func(*args, **kwargs)
+        return wrapper
+    return decorator
