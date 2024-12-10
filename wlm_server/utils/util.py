@@ -85,3 +85,13 @@ def _synchronized(lock: threading.Lock) -> Callable:
                 return func(*args, **kwargs)
         return wrapper
     return decorator
+
+
+def task_synchronized(func: Callable) -> Callable:
+    """Makes the given function execute after acquiring the task-associated lock."""
+    return _synchronized(settings.TASK_LOCK)(func)
+
+
+def lock_synchronized(func: Callable) -> Callable:
+    """Makes the given function execute after acquiring the lock-associated lock."""
+    return _synchronized(settings.LOCK_LOCK)(func)
