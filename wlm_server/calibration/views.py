@@ -9,6 +9,7 @@ from task.message import ActionType, MessageInfo, MessageQueue
 from task.handler import TaskHandler
 from utils import util
 
+@util.task_synchronized
 @login_required
 @api_view(['POST'])
 def calibrate(request):

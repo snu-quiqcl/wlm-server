@@ -14,6 +14,7 @@ from task.handler import TaskHandler
 from cache.channel import ChannelCache
 from utils import util
 
+@util.task_synchronized
 @login_required
 @api_view(['POST'])
 def handle_info(request, ch: int):  # pylint: disable=too-many-locals
