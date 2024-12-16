@@ -10,12 +10,22 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
 import threading
 from pathlib import Path
 
-from decouple import config
+from decouple import Config, RepositoryEnv
 
 from task.message import MessageQueue
+
+settings_module = os.getenv('DJANGO_SETTINGS_MODULE')
+if settings_module == 'wlm_server.settings.development':
+    env_path = '.env.development'
+elif settings_module == 'wlm_server.settings.production':
+    env_path = '.env.production'
+else:
+    raise ValueError('Invalid DJANGO_SETTINGS_MODULE')
+config = Config(RepositoryEnv(env_path))
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
