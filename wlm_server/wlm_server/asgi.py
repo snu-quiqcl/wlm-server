@@ -16,7 +16,7 @@ from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.security.websocket import AllowedHostsOriginValidator
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'wlm_server.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'wlm_server.settings.production')
 
 # pylint: disable=wrong-import-position
 from cache.channel import ChannelCache
