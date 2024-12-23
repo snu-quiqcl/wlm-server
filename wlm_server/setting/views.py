@@ -30,6 +30,8 @@ def handle_info(request, ch: int):  # pylint: disable=too-many-locals
     req_data = request.data.copy()
     if 'exposure' in req_data:
         exposure_s = req_data['exposure']
+        if exposure_s <= 0:
+            return HttpResponse(status=422)
         exposure = timedelta(seconds=exposure_s)
         update_exposure = True
         notif['exposure'] = exposure_s
