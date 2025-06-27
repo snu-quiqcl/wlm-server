@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from team.serializer import TeamInfoSerializer
+from team.serializers import TeamInfoSerializer
 from .models import User
 
 class UserInfoSerializer(serializers.ModelSerializer):
