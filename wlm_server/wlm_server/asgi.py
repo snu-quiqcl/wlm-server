@@ -10,7 +10,29 @@ https://docs.djangoproject.com/en/5.1/howto/deployment/asgi/
 import os
 
 from django.core.asgi import get_asgi_application
+from django.urls import path
+from django.conf import settings
+from channels.auth import AuthMiddlewareStack
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.security.websocket import AllowedHostsOriginValidator
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'wlm_server.settings')
 
-application = get_asgi_application()
+# pylint: disable=wrong-import-position
+from cache.channel import ChannelCache
+from operation.consumers import OperationConsumer
+
+settings.CHANNEL_CACHE = ChannelCache()
+
+application = ProtocolTypeRouter(
+    {
+        'http': get_asgi_application(),
+        'websocket': AllowedHostsOriginValidator(
+            AuthMiddlewareStack(
+                URLRouter([
+                    path('ws/operation/<int:ch>/', OperationConsumer.as_asgi()),
+                ])
+            )
+        ),
+    }
+)

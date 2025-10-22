@@ -35,6 +35,8 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
+    'channels',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -82,7 +84,15 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'wlm_server.wsgi.application'
+ASGI_APPLICATION = 'wlm_server.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
+
+AUTH_USER_MODEL = 'user.User'
 
 
 # Database
@@ -140,7 +150,8 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = 'user.User'
+
+# Global variables
 
 MESSAGE_QUEUE = MessageQueue()
 
