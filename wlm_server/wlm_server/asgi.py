@@ -22,6 +22,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'wlm_server.settings')
 from cache.channel import ChannelCache
 from operation.consumers import OperationConsumer
 from setting.consumers import SettingConsumer
+from measurement.consumers import MeasurementConsumer
 
 settings.CHANNEL_CACHE = ChannelCache()
 
@@ -33,6 +34,7 @@ application = ProtocolTypeRouter(
                 URLRouter([
                     path('ws/operation/<int:ch>/', OperationConsumer.as_asgi()),
                     path('ws/setting/<int:ch>/', SettingConsumer.as_asgi()),
+                    path('ws/measurement/<int:ch>/', MeasurementConsumer.as_asgi()),
                 ])
             )
         ),

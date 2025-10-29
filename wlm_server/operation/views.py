@@ -28,10 +28,16 @@ def handle_info(request, ch: int):
     on = req_data['on']
     operation = Operation(user=user, channel=channel, on=on)
     if on:
-        if not util.is_wlm_running():
-            task_handler = TaskHandler()
-            task_handler.start()
         if not util.is_channel_running(ch):
+            setting = settings.CHANNEL_CACHE.get_setting(ch)
+            message = MessageInfo(ActionType.SETTING, ch,
+                                  {'setting': setting, 'update_exposure': True})
+            message_queue.push(message)
+            if not util.is_wlm_running():
+                message = MessageInfo(ActionType.START, ch, None)
+                message_queue.push(message)
+                task_handler = TaskHandler()
+                task_handler.start()
             message = MessageInfo(ActionType.OPERATE, ch, {'on': True})
             message_queue.push(message)
             notif = {'on': True}
@@ -50,7 +56,7 @@ def handle_info(request, ch: int):
             async_to_sync(channel_layer.group_send)(
                 f'channel_{ch}_operation', {'type': 'notify', 'message': json.dumps(notif)}
             )
-        if not util.is_wlm_running():
-            message = MessageInfo(ActionType.CLOSE, None, None)
-            message_queue.push(message)
+            if not util.is_wlm_running():
+                message = MessageInfo(ActionType.STOP, None, None)
+                message_queue.push(message)
     return HttpResponse(status=200)
