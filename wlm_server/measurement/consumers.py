@@ -2,6 +2,7 @@ import json
 from datetime import timedelta
 
 from django.utils import timezone
+from django.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 from camel_converter import dict_to_camel
@@ -23,9 +24,10 @@ class MeasurementConsumer(AsyncWebsocketConsumer):
         self.group_name = f'channel_{self.ch}_measurement'
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
-        message = await sync_to_async(self.get_recent_measurements)()
+        message = await self.get_recent_measurements()
         await self.send(text_data=json.dumps(message))
 
+    @database_sync_to_async
     def get_recent_measurements(self):
         cutoff_time = timezone.now() - timedelta(minutes=10)
         recent_measurements = Measurement.objects.filter(
