@@ -2,9 +2,8 @@ import json
 from datetime import timedelta
 
 from django.utils import timezone
-from django.db import database_sync_to_async
+from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-from asgiref.sync import sync_to_async
 from camel_converter import dict_to_camel
 
 from measurement.models import Measurement
