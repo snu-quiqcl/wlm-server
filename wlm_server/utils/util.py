@@ -3,7 +3,7 @@ from django.conf import settings
 from user.models import User
 from channel.models import Channel
 
-def verify_channel_access(user: User, ch: int) -> tuple[Channel | None, int | None]:
+def verify_channel_access(user: User, ch: int) -> tuple[Channel, None] | tuple[None, int]:
     """Verifies if the user has permission to access the channel.
     
     Args:
