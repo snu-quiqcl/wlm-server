@@ -4,6 +4,7 @@ from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.utils import timezone
+from django.views.decorators.http import require_http_methods
 from rest_framework.decorators import api_view
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -12,6 +13,7 @@ from lock.models import Lock
 from utils import util
 
 @login_required
+@require_http_methods(['POST'])
 @api_view(['POST'])
 def try_lock(request, ch: int):
     user = request.user
@@ -29,6 +31,7 @@ def try_lock(request, ch: int):
 
 
 @login_required
+@require_http_methods(['PUT'])
 @api_view(['PUT'])
 def release_lock(request, ch: int):
     user = request.user
