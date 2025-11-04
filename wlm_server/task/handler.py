@@ -44,13 +44,15 @@ class TaskHandler(threading.Thread):
         self._wlm.open()
         self._wlm.set_read_mode('single')
 
+    def _close_wlm(self):
+        self._wlm.close()
+
     def _start_wlm(self, channel: int):
         self._switch(channel)
         self._wlm.start_measurement()
 
     def _stop_wlm(self):
         self._wlm.stop_measurement()
-        self._wlm.close()
 
     def _start_channel_measurement(self, channel: int):
         measure = MeasureInfo(channel, timezone.now())
@@ -67,17 +69,22 @@ class TaskHandler(threading.Thread):
             self._wlm.set_active_channel(channel=channel)
             self._active_channel = channel
 
+    def _calibrate(self, channel: int, frequency: float):
+        self._wlm.calibrate(source_type='other', source_frequency=frequency, channel=channel)
+
     def run(self):
         while True:
             while (message := self._message_queue.pop()) is not None:
                 channel = message.channel
                 data = message.data
                 match message.action:
+                    case ActionType.CLOSE:
+                        self._close_wlm()
+                        return
                     case ActionType.START:
                         self._start_wlm(channel)
                     case ActionType.STOP:
                         self._stop_wlm()
-                        return
                     case ActionType.OPERATE:
                         on = data['on']
                         if on:
@@ -89,6 +96,9 @@ class TaskHandler(threading.Thread):
                         if data['update_exposure']:
                             self._set_channel_exposure(channel, setting.exposure)
                         self._channel_to_setting[channel] = setting
+                    case ActionType.CALIB:
+                        self._set_channel_exposure(channel, data['exposure'])
+                        self._calibrate(channel, data['freq'])
             measure = self._measure_queue.pop()
             if measure is None:
                 continue

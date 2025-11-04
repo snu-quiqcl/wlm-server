@@ -8,6 +8,7 @@ class Config(models.Model):
     wlm_dll_path = models.CharField(max_length=100, blank=True, null=True, default=None)
     wlm_app_path = models.CharField(max_length=100, blank=True, null=True, default=None)
     calib_ch = models.IntegerField()
+    calib_exposure = models.DurationField()
     calib_freq = models.FloatField()
     lock_duration = models.DurationField(default=timedelta(minutes=5))
 
@@ -17,6 +18,7 @@ class Config(models.Model):
             f'WLM DLL path: {self.wlm_dll_path}, '
             f'WLM app path: {self.wlm_app_path}, '
             f'Calibration channel: {self.calib_ch}, '
+            f'Calibration exposure: {self.calib_exposure}, '
             f'Calibration frequency: {self.calib_freq}, '
             f'Lock duration: {self.lock_duration}'
         )
