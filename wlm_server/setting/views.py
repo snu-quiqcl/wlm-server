@@ -49,8 +49,9 @@ def handle_info(request, ch: int):  # pylint: disable=too-many-locals
     async_to_sync(channel_layer.group_send)(
         f'channel_{ch}_setting', {'type': 'notify', 'message': json.dumps(notif)}
     )
+    joined_event_content = ', '.join(event_content)
     util.record_event(
         Event.EventType.SETTING,
-        f'{user.username} updated the setting of channel {ch} ({', '.join(event_content)}).'
+        f'{user.username} updated the setting of channel {ch} ({joined_event_content}).'
     )
     return HttpResponse(status=200)
