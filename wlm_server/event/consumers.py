@@ -2,8 +2,8 @@ import json
 from datetime import timedelta
 
 from django.utils import timezone
+from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-from asgiref.sync import sync_to_async
 from camel_converter import dict_to_camel
 
 from event.models import Event
@@ -21,9 +21,10 @@ class EventConsumer(AsyncWebsocketConsumer):
         self.group_name = 'event'
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
-        message = await sync_to_async(self.get_recent_events)()
+        message = await self.get_recent_events()
         await self.send(text_data=json.dumps(message))
 
+    @database_sync_to_async
     def get_recent_events(self):
         cutoff_time = timezone.now() - timedelta(minutes=10)
         recent_events = Event.objects.filter(occurred_at__gte=cutoff_time).order_by('occurred_at')

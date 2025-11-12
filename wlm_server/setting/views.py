@@ -34,12 +34,12 @@ def handle_info(request, ch: int):  # pylint: disable=too-many-locals
         exposure = timedelta(seconds=exposure_s)
         update_exposure = True
         notif['exposure'] = exposure_s
-        event_content.append(f'exposure: {exposure_s * 1e3:.0f}ms')
+        event_content.append(f'exposure: {exposure_s * 1e3:.0f} ms')
     if 'period' in req_data:
         period_s = req_data['period']
         period = timedelta(seconds=period_s)
         notif['period'] = period_s
-        event_content.append(f'period: {period_s:.3f}s')
+        event_content.append(f'period: {period_s:.3f} s')
     setting = Setting(channel=channel, exposure=exposure, period=period)
     setting.save()
     message = MessageInfo(ActionType.SETTING, ch,
