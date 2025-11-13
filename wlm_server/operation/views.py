@@ -8,6 +8,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 from operation.models import Operation
+from event.models import Event
 from task.message import ActionType, MessageInfo, MessageQueue
 from task.handler import TaskHandler
 from utils import util
@@ -24,6 +25,8 @@ def handle_info(request, ch: int):
     on = req_data['on']
     operation = Operation(user=user, channel=channel, on=on)
     if on:
+        util.record_event(Event.EventType.OPERATION,
+                          f'{user.username} requested measurement of channel {ch}.')
         if not util.is_channel_running(ch):
             setting = settings.CHANNEL_CACHE.get_setting(ch)
             message = MessageInfo(ActionType.SETTING, ch,
@@ -34,6 +37,7 @@ def handle_info(request, ch: int):
                 message_queue.push(message)
                 task_handler = TaskHandler()
                 task_handler.start()
+                util.record_event(Event.EventType.OPERATION, 'WLM started.')
             message = MessageInfo(ActionType.OPERATE, ch, {'on': True})
             message_queue.push(message)
             notif = {'on': True}
@@ -41,8 +45,11 @@ def handle_info(request, ch: int):
             async_to_sync(channel_layer.group_send)(
                 f'channel_{ch}_operation', {'type': 'notify', 'message': json.dumps(notif)}
             )
+            util.record_event(Event.EventType.OPERATION, f'Measurement of channel {ch} started.')
         operation.save()
     else:
+        util.record_event(Event.EventType.OPERATION,
+                          f'{user.username} requested to stop the measurement of channel {ch}.')
         operation.save()
         if not util.is_channel_running(ch):
             message = MessageInfo(ActionType.OPERATE, ch, {'on': False})
@@ -52,9 +59,11 @@ def handle_info(request, ch: int):
             async_to_sync(channel_layer.group_send)(
                 f'channel_{ch}_operation', {'type': 'notify', 'message': json.dumps(notif)}
             )
+            util.record_event(Event.EventType.OPERATION, f'Measurement of channel {ch} stopped.')
             if not util.is_wlm_running():
                 message = MessageInfo(ActionType.STOP, None, None)
                 message_queue.push(message)
                 message = MessageInfo(ActionType.CLOSE, None, None)
                 message_queue.push(message)
+                util.record_event(Event.EventType.OPERATION, 'WLM stopped.')
     return HttpResponse(status=200)

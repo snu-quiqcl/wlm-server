@@ -4,6 +4,8 @@ from django.contrib.auth.decorators import login_required
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
+from event.models import Event
+from utils import util
 from .serializers import UserInfoSerializer
 
 @api_view(['POST'])
@@ -14,6 +16,7 @@ def sign_in(request):
     user = authenticate(username=username, password=password)
     if user is not None:
         login(request, user)
+        util.record_event(Event.EventType.USER, f'{username} signed in.')
         user_data = UserInfoSerializer(user).data
         data = {'user': user_data}
         return Response(data)
@@ -23,7 +26,9 @@ def sign_in(request):
 @login_required
 @api_view(['POST'])
 def sign_out(request):
+    user = request.user
     logout(request)
+    util.record_event(Event.EventType.USER, f'{user.username} signed out.')
     return HttpResponse(status=200)
 
 

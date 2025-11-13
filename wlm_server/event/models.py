@@ -3,10 +3,12 @@ from django.db import models
 class Event(models.Model):
     class EventType(models.TextChoices):
         GENERAL = 'GN', 'general'
-        ERROR = 'ER', 'error'
         WARNING = 'WN', 'warning'
-        LOCK = 'LK', 'lock'
+        ERROR = 'ER', 'error'
+        USER = 'US', 'user'
         OPERATION = 'OP', 'operation'
+        SETTING = 'ST', 'setting'
+        LOCK = 'LK', 'lock'
         CONFIG = 'CF', 'config'
 
     category = models.CharField(max_length=2, choices=EventType, default=EventType.GENERAL)

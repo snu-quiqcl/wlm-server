@@ -5,6 +5,7 @@ from django.views.decorators.http import require_http_methods
 from rest_framework.decorators import api_view
 
 from config.models import Config
+from event.models import Event
 from task.message import ActionType, MessageInfo, MessageQueue
 from task.handler import TaskHandler
 from utils import util
@@ -28,4 +29,5 @@ def calibrate(request):
     message_queue.push(message)
     message = MessageInfo(ActionType.CLOSE, None, None)
     message_queue.push(message)
+    util.record_event(Event.EventType.OPERATION, 'WLM calibrated.')
     return HttpResponse(status=200)
