@@ -1,6 +1,7 @@
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
+from django.views.decorators.http import require_http_methods
 from rest_framework.decorators import api_view
 
 from config.models import Config
@@ -10,6 +11,7 @@ from task.handler import TaskHandler
 from utils import util
 
 @login_required
+@require_http_methods(['POST'])
 @api_view(['POST'])
 def calibrate(request):
     config = Config.objects.first()
