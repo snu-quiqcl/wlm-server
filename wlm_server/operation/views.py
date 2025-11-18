@@ -11,16 +11,18 @@ from operation.models import Operation
 from event.models import Event
 from task.message import ActionType, MessageInfo, MessageQueue
 from task.handler import TaskHandler
+from cache.channel import ChannelCache
 from utils import util
 
 @login_required
 @api_view(['POST'])
-def handle_info(request, ch: int):
+def handle_info(request, ch: int):  # pylint: disable=too-many-locals
     user = request.user
     channel, error_code = util.verify_channel_access(user, ch, False)
     if channel is None:
         return HttpResponse(status=error_code)
     message_queue: MessageQueue = settings.MESSAGE_QUEUE
+    channel_cache: ChannelCache = settings.CHANNEL_CACHE
     req_data = request.data.copy()
     on = req_data['on']
     operation = Operation(user=user, channel=channel, on=on)
@@ -28,7 +30,7 @@ def handle_info(request, ch: int):
         util.record_event(Event.EventType.OPERATION,
                           f'{user.username} requested measurement of channel {ch}.')
         if not util.is_channel_running(ch):
-            setting = settings.CHANNEL_CACHE.get_setting(ch)
+            setting = channel_cache.get_setting(ch)
             message = MessageInfo(ActionType.SETTING, ch,
                                   {'setting': setting, 'update_exposure': True})
             message_queue.push(message)
@@ -40,11 +42,6 @@ def handle_info(request, ch: int):
                 util.record_event(Event.EventType.OPERATION, 'WLM started.')
             message = MessageInfo(ActionType.OPERATE, ch, {'on': True})
             message_queue.push(message)
-            notif = {'on': True}
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                f'channel_{ch}_operation', {'type': 'notify', 'message': json.dumps(notif)}
-            )
             util.record_event(Event.EventType.OPERATION, f'Measurement of channel {ch} started.')
         operation.save()
     else:
@@ -54,11 +51,6 @@ def handle_info(request, ch: int):
         if not util.is_channel_running(ch):
             message = MessageInfo(ActionType.OPERATE, ch, {'on': False})
             message_queue.push(message)
-            notif = {'on': False}
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                f'channel_{ch}_operation', {'type': 'notify', 'message': json.dumps(notif)}
-            )
             util.record_event(Event.EventType.OPERATION, f'Measurement of channel {ch} stopped.')
             if not util.is_wlm_running():
                 message = MessageInfo(ActionType.STOP, None, None)
@@ -66,4 +58,10 @@ def handle_info(request, ch: int):
                 message = MessageInfo(ActionType.CLOSE, None, None)
                 message_queue.push(message)
                 util.record_event(Event.EventType.OPERATION, 'WLM stopped.')
+    requesters = [op.user.username for op in channel_cache.get_operations(ch).values() if op.on]
+    notif = {'on': on, 'requesters': requesters}
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f'channel_{ch}_operation', {'type': 'notify', 'message': json.dumps(notif)}
+    )
     return HttpResponse(status=200)
