@@ -11,8 +11,8 @@ from event.models import Event
 from event.serializers import EventSerializer
 
 def verify_channel_access(
-    user: User, ch: int, check_lock: bool = True
-) -> tuple[Channel | None, int | None]:
+    user: User, ch: int, check_lock: bool = True,
+) -> tuple[Channel, None] | tuple[None, int]:
     """Verifies if the user has permission to access the channel.
     
     Args:
