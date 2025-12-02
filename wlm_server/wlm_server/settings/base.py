@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'measurement.apps.MeasurementConfig',
     'operation.apps.OperationConfig',
     'calibration.apps.CalibrationConfig',
+    'pid_operation.apps.PidOperationConfig',
     'event.apps.EventConfig',
     'config.apps.ConfigConfig',
 ]
