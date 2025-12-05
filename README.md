@@ -6,3 +6,4 @@ Server for controlling and monitoring High Finesse wavelength meter
 
 ## Caution
 - There must be at least one item in the Operation and Setting model for each channel.
+- This server must be run in a single-process configuration (no multiple worker processes).

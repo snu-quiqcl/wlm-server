@@ -13,6 +13,7 @@ from lock.models import Lock
 from event.models import Event
 from utils import util
 
+@util.lock_synchronized
 @login_required
 @require_http_methods(['POST'])
 @api_view(['POST'])
@@ -32,6 +33,7 @@ def try_lock(request, ch: int):
     return HttpResponse(status=200)
 
 
+@util.lock_synchronized
 @login_required
 @require_http_methods(['PUT'])
 @api_view(['PUT'])

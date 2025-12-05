@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import threading
 from pathlib import Path
 
 from decouple import config
@@ -156,3 +157,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MESSAGE_QUEUE = MessageQueue()
 
 CHANNEL_CACHE = None
+
+TASK_LOCK = threading.Lock()
+LOCK_LOCK = threading.Lock()

@@ -10,6 +10,7 @@ from task.message import ActionType, MessageInfo, MessageQueue
 from task.handler import TaskHandler
 from utils import util
 
+@util.task_synchronized
 @login_required
 @require_http_methods(['POST'])
 @api_view(['POST'])
