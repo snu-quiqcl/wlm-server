@@ -20,12 +20,12 @@ from task.message import MessageQueue
 
 settings_module = os.getenv('DJANGO_SETTINGS_MODULE')
 if settings_module == 'wlm_server.settings.development':
-    env_path = '.env.development'
+    ENV_PATH = '.env.development'
 elif settings_module == 'wlm_server.settings.production':
-    env_path = '.env.production'
+    ENV_PATH = '.env.production'
 else:
     raise ValueError('Invalid DJANGO_SETTINGS_MODULE')
-config = Config(RepositoryEnv(env_path))
+config = Config(RepositoryEnv(ENV_PATH))
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
