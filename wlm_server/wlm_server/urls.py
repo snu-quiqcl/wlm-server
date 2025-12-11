@@ -18,11 +18,11 @@ from django.contrib import admin
 from django.urls import include, path
 
 urlpatterns = [
-    path('user/', include('user.urls')),
-    path('channel/', include('channel.urls')),
-    path('setting/', include('setting.urls')),
-    path('operation/', include('operation.urls')),
-    path('calibration/', include('calibration.urls')),
-    path('lock/', include('lock.urls')),
+    path('api/user/', include('user.urls')),
+    path('api/channel/', include('channel.urls')),
+    path('api/setting/', include('setting.urls')),
+    path('api/operation/', include('operation.urls')),
+    path('api/calibration/', include('calibration.urls')),
+    path('api/lock/', include('lock.urls')),
     path('admin/', admin.site.urls),
 ]
