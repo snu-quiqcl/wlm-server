@@ -13,7 +13,7 @@ from channel.models import Channel
 from event.models import Event
 from event.serializers import EventSerializer
 
-def verify_channel_access(
+def verify_channel_access(  # pylint: disable=too-many-return-statements
     user: User, ch: int, check_lock: bool = False, check_open: bool = False,
 ) -> tuple[Channel | None, int | None]:
     """Verifies if the user has permission to access the channel.
