@@ -16,7 +16,9 @@ from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.security.websocket import AllowedHostsOriginValidator
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'wlm_server.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'wlm_server.settings.production')
+
+asgi_application = get_asgi_application()
 
 # pylint: disable=wrong-import-position
 from cache.channel import ChannelCache
@@ -30,7 +32,7 @@ settings.CHANNEL_CACHE = ChannelCache()
 
 application = ProtocolTypeRouter(
     {
-        'http': get_asgi_application(),
+        'http': asgi_application,
         'websocket': AllowedHostsOriginValidator(
             AuthMiddlewareStack(
                 URLRouter([

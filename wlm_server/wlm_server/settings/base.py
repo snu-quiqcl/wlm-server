@@ -10,27 +10,29 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
 import threading
 from pathlib import Path
 
-from decouple import config
+from decouple import Config, RepositoryEnv
 
 from task.message import MessageQueue
 
+settings_module = os.getenv('DJANGO_SETTINGS_MODULE')
+if settings_module == 'wlm_server.settings.development':
+    ENV_PATH = '.env.development'
+elif settings_module == 'wlm_server.settings.production':
+    ENV_PATH = '.env.production'
+else:
+    raise ValueError('Invalid DJANGO_SETTINGS_MODULE')
+config = Config(RepositoryEnv(ENV_PATH))
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='TEST_SECRET_KEY')
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -59,6 +61,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -103,7 +106,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'OPTIONS': {
-            'service': config('POSTGRESQL_SERVICE', default='TEST_POSTGRESQL_SERVICE'),
+            'service': config('POSTGRESQL_SERVICE'),
             'passfile': '.pgpass',
         },
     }
@@ -145,6 +148,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

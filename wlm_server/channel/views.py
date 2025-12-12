@@ -1,5 +1,6 @@
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from camel_converter import dict_to_camel
@@ -9,6 +10,7 @@ from channel.serializers import ChannelInfoSerializer
 from utils import util
 
 @login_required
+@require_http_methods(['GET'])
 @api_view(['GET'])
 def handle_info(request):
     user = request.user
@@ -18,6 +20,7 @@ def handle_info(request):
 
 
 @login_required
+@require_http_methods(['GET'])
 @api_view(['GET'])
 def handle_single_info(request, ch: int):
     user = request.user
