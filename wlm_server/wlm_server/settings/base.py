@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'measurement.apps.MeasurementConfig',
     'operation.apps.OperationConfig',
     'calibration.apps.CalibrationConfig',
+    'dac_device.apps.DacDeviceConfig',
     'pid_operation.apps.PidOperationConfig',
     'pid_setting.apps.PidSettingConfig',
     'event.apps.EventConfig',

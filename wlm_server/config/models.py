@@ -11,7 +11,6 @@ class Config(models.Model):
     calib_exposure = models.DurationField()
     calib_freq = models.FloatField()
     lock_duration = models.DurationField(default=timedelta(minutes=5))
-    dac_com_port = models.CharField(max_length=20, blank=True, null=True, default=None)
 
     def __str__(self):
         return (
