@@ -17,7 +17,7 @@ from utils import util
 def calibrate(request):
     config = Config.objects.first()
     user = request.user
-    channel, error_code = util.verify_channel_access(user, config.calib_ch)
+    channel, error_code = util.verify_channel_access(user, config.calib_ch, check_open=True)
     if channel is None:
         return HttpResponse(status=error_code)
     if util.is_wlm_running():

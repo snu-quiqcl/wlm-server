@@ -13,16 +13,18 @@ from channel.models import Channel
 from event.models import Event
 from event.serializers import EventSerializer
 
-def verify_channel_access(
-    user: User, ch: int, check_lock: bool = True,
-) -> tuple[Channel, None] | tuple[None, int]:
+def verify_channel_access(  # pylint: disable=too-many-return-statements
+    user: User, ch: int, check_lock: bool = False, check_open: bool = False,
+) -> tuple[Channel | None, int | None]:
     """Verifies if the user has permission to access the channel.
     
     Args:
         user: User requesting access.
         ch: Target channel.
-        check_lock: If True, it verifies if the user has a valid lock on the channel or the channel
-          is open. Otherwise, it skips the check.
+        check_lock: If True, it verifies if the user has a valid lock on the channel. Otherwise, it
+          skips the check.
+        check_open: If check_lock is False and check_open is True, it verifies if the channel is
+          open. Otherwise, it skips the check.
 
     Returns:
         (channel, error_code):
@@ -36,10 +38,15 @@ def verify_channel_access(
         return None, 404
     if not channel.teams.contains(user.team):
         return None, 403
+    lock = settings.CHANNEL_CACHE.get_lock(ch)
     if check_lock:
-        lock = settings.CHANNEL_CACHE.get_lock(ch)
-        if lock is not None and lock.user != user:
-            return None, 409
+        if lock is not None and lock.user == user:
+            return channel, None
+        return None, 409
+    if check_open:
+        if lock is None:
+            return channel, None
+        return None, 409
     return channel, None
 
 
