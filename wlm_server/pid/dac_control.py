@@ -8,7 +8,7 @@ class DacControlInfo:
     """DAC control info.
     
     Fields:
-        channel: Target channel
+        channel: Target channel.
         voltage: Target voltage in V.
     """
     channel: int
