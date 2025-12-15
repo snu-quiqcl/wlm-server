@@ -3,6 +3,7 @@
 import time
 import threading
 import json
+from collections import defaultdict
 from datetime import timedelta
 
 from django.utils import timezone
@@ -103,7 +104,7 @@ class TaskHandler(threading.Thread):
                     case ActionType.CALIB:
                         self._set_channel_exposure(channel, data['exposure'])
                         self._calibrate(channel, data['freq'])
-            notif = []
+            measurements: dict[int, list] = defaultdict(list)  # {channel: [measurement]}
             measurement_slice_deadline = time.monotonic() + MEASUREMENT_SLICE_SECONDS
             while time.monotonic() < measurement_slice_deadline:
                 measure = self._measure_queue.pop()
@@ -126,9 +127,10 @@ class TaskHandler(threading.Thread):
                     measurement['error'] = frequency_or_error
                 measure_record.save()
                 measurement['measured_at'] = measure_record.measured_at.isoformat()
-                notif.append(dict_to_camel(measurement))
+                measurements[channel].append(dict_to_camel(measurement))
             channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                f'channel_{channel}_measurement',
-                {'type': 'notify', 'message': json.dumps(notif)}
-            )
+            for channel, channel_measurements in measurements.items():
+                async_to_sync(channel_layer.group_send)(
+                    f'channel_{channel}_measurement',
+                    {'type': 'notify', 'message': json.dumps(channel_measurements)}
+                )
