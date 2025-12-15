@@ -22,7 +22,7 @@ from .measure import MeasureInfo, MeasureQueue
 MEASUREMENT_SLICE_SECONDS = 0.5
 
 
-class TaskHandler(threading.Thread):
+class TaskHandler(threading.Thread):  # pylint: disable=too-many-locals
     """Task handler for controlling and monitoring WLM.
     
     Workflow:
