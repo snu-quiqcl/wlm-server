@@ -4,18 +4,25 @@ from django.conf import settings
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 from pid.dac_control import DacControlInfo
+from utils import util
 
 class DacControlConsumer(AsyncWebsocketConsumer):
     """Consumer for receiving the DAC control commands and sending them to the DAC control queue.
     
     Attributes:
-        ch: Target WLM channel.
+        channel: Target WLM channel.
     """
 
     # pylint: disable=attribute-defined-outside-init
     async def connect(self):
-        self.ch = self.scope['url_route']['kwargs']['ch']
+        user = self.scope['user']
+        ch = self.scope['url_route']['kwargs']['ch']
+        channel, error_code = util.verify_channel_access(user, ch)
+        if channel is None:
+            await self.close(code=error_code)
+            return
         await self.accept()
+        self.channel = channel
 
     async def receive(self, text_data=None, bytes_data=None):
         """Receives the DAC control commands and sends them to the DAC control queue.
@@ -31,4 +38,4 @@ class DacControlConsumer(AsyncWebsocketConsumer):
         action = payload['action']
         if action == 'voltage':
             voltage = payload['voltage']
-            settings.DAC_CONTROL_QUEUE.push(DacControlInfo(self.ch, voltage))
+            settings.DAC_CONTROL_QUEUE.push(DacControlInfo(self.channel.channel, voltage))
