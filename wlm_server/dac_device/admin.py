@@ -8,11 +8,11 @@ class DacDeviceAdmin(admin.ModelAdmin):
         (
             None,
             {
-                'fields': ['name', 'backed', 'port'],
+                'fields': ['name', 'backend', 'port'],
             },
         ),
     ]
-    list_display = ['id', 'name', 'backed', 'port']
-    list_filter = ['backed']
-    search_fields = ['name', 'backed', 'port']
+    list_display = ['id', 'name', 'backend', 'port']
+    list_filter = ['backend']
+    search_fields = ['name', 'backend', 'port']
     ordering = ['id']
