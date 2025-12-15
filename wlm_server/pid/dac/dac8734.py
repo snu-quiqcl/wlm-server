@@ -75,4 +75,4 @@ class DAC8734(BaseDAC):
             DAC code (0-65535).
         """
         raw = int((65536 / (4 * self.VREF)) * voltage)
-        return (raw + 65536) % 65536
+        return min(max(raw, 0), 65535)
