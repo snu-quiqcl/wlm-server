@@ -22,7 +22,7 @@ from .measure import MeasureInfo, MeasureQueue
 MEASUREMENT_SLICE_SECONDS = 0.5
 
 
-class TaskHandler(threading.Thread):  # pylint: disable=too-many-locals
+class TaskHandler(threading.Thread):
     """Task handler for controlling and monitoring WLM.
     
     Workflow:
@@ -77,7 +77,7 @@ class TaskHandler(threading.Thread):  # pylint: disable=too-many-locals
     def _calibrate(self, channel: int, frequency: float):
         self._wlm.calibrate(source_type='other', source_frequency=frequency, channel=channel)
 
-    def run(self):
+    def run(self):  # pylint: disable=too-many-locals
         while True:
             while (message := self._message_queue.pop()) is not None:
                 channel = message.channel
