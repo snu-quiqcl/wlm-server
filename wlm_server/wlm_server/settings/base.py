@@ -17,6 +17,9 @@ from pathlib import Path
 from decouple import Config, RepositoryEnv
 
 from task.message import MessageQueue
+from pid.message import PidMessageQueue
+from pid.dac_control import DacControlQueue
+from pid.frequency import FrequencyQueue
 
 settings_module = os.getenv('DJANGO_SETTINGS_MODULE')
 if settings_module == 'wlm_server.settings.development':
@@ -55,6 +58,9 @@ INSTALLED_APPS = [
     'measurement.apps.MeasurementConfig',
     'operation.apps.OperationConfig',
     'calibration.apps.CalibrationConfig',
+    'dac_device.apps.DacDeviceConfig',
+    'pid_operation.apps.PidOperationConfig',
+    'pid_setting.apps.PidSettingConfig',
     'event.apps.EventConfig',
     'config.apps.ConfigConfig',
 ]
@@ -160,6 +166,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Global variables
 
 MESSAGE_QUEUE = MessageQueue()
+PID_MESSAGE_QUEUE = PidMessageQueue()
+DAC_CONTROL_QUEUE = DacControlQueue()
+FREQUENCY_QUEUE = FrequencyQueue()
 
 CHANNEL_CACHE = None
 
