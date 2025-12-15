@@ -1,5 +1,6 @@
 """Module for task handler with WLM."""
 
+import time
 import threading
 import json
 from datetime import timedelta
@@ -16,6 +17,9 @@ from setting.models import Setting
 from measurement.models import Measurement
 from .message import ActionType, MessageQueue
 from .measure import MeasureInfo, MeasureQueue
+
+MEASUREMENT_SLICE_SECONDS = 0.5
+
 
 class TaskHandler(threading.Thread):
     """Task handler for controlling and monitoring WLM.
@@ -99,28 +103,32 @@ class TaskHandler(threading.Thread):
                     case ActionType.CALIB:
                         self._set_channel_exposure(channel, data['exposure'])
                         self._calibrate(channel, data['freq'])
-            measure = self._measure_queue.pop()
-            if measure is None:
-                continue
-            channel = measure.channel
-            self._switch(channel)
-            frequency_or_error = self._wlm.get_frequency(
-                channel=channel, error_on_invalid=False, wait=True, timeout=3)
-            setting = self._channel_to_setting[channel]
-            deadline = timezone.now() + setting.period
-            next_measure = MeasureInfo(channel, deadline)
-            self._measure_queue.push(next_measure)
-            notif = {'frequency': None, 'error': None}
-            if isinstance(frequency_or_error, float):
-                measure_record = Measurement(setting=setting, frequency=frequency_or_error)
-                notif['frequency'] = frequency_or_error
-            else:
-                measure_record = Measurement(setting=setting, error=frequency_or_error)
-                notif['error'] = frequency_or_error
-            measure_record.save()
-            notif['measured_at'] = measure_record.measured_at.isoformat()
+            notif = []
+            measurement_slice_deadline = time.monotonic() + MEASUREMENT_SLICE_SECONDS
+            while time.monotonic() < measurement_slice_deadline:
+                measure = self._measure_queue.pop()
+                if measure is None:
+                    continue
+                channel = measure.channel
+                self._switch(channel)
+                frequency_or_error = self._wlm.get_frequency(
+                    channel=channel, error_on_invalid=False, wait=True, timeout=3)
+                setting = self._channel_to_setting[channel]
+                deadline = timezone.now() + setting.period
+                next_measure = MeasureInfo(channel, deadline)
+                self._measure_queue.push(next_measure)
+                measurement = {'frequency': None, 'error': None}
+                if isinstance(frequency_or_error, float):
+                    measure_record = Measurement(setting=setting, frequency=frequency_or_error)
+                    measurement['frequency'] = frequency_or_error
+                else:
+                    measure_record = Measurement(setting=setting, error=frequency_or_error)
+                    measurement['error'] = frequency_or_error
+                measure_record.save()
+                measurement['measured_at'] = measure_record.measured_at.isoformat()
+                notif.append(dict_to_camel(measurement))
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 f'channel_{channel}_measurement',
-                {'type': 'notify', 'message': json.dumps(dict_to_camel(notif))}
+                {'type': 'notify', 'message': json.dumps(notif)}
             )
