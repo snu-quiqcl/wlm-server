@@ -15,8 +15,10 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Configure PAT for GitHub
+      env:
+        GH_PAT: ${{ secrets.GH_PAT }}
       run: |
-        git config --global url."https://x-access-token:${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
+        git config --global url."https://x-access-token:${{ env.GH_PAT }}@github.com/".insteadOf "https://github.com/"
     - name: Install dependencies
       run: |
         sudo apt-get update
