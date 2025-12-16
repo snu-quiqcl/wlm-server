@@ -5,6 +5,7 @@ import threading
 import json
 from collections import defaultdict
 from datetime import timedelta
+from typing import Any
 
 from django.utils import timezone
 from django.conf import settings
@@ -28,9 +29,10 @@ class TaskHandler(threading.Thread):
     Workflow:
         1. Check if there are remaining messages in message queue. If so, perform all tasks.
         2. Get the most prioritized measurement from measurement queue.
-        3. Perform the measurement and notify the result to request handler.
-        4. Put the next measurement to measurement queue.
-        5. Repeat steps 1 through 4.
+        3. Perform the measurement and record the result.
+        4. Repeat steps 2 and 3 for measurement slice.
+        5. Notify all results to request handlers.
+        6. Repeat steps 1 through 5.
     """
 
     def __init__(self):
@@ -74,6 +76,24 @@ class TaskHandler(threading.Thread):
             self._wlm.set_active_channel(channel=channel)
             self._active_channel = channel
 
+    def _measure_channel(self, channel: int) -> dict[str, Any]:
+        frequency_or_error = self._wlm.get_frequency(
+            channel=channel, error_on_invalid=False, wait=True, timeout=3)
+        setting = self._channel_to_setting[channel]
+        deadline = timezone.now() + setting.period
+        next_measure = MeasureInfo(channel, deadline)
+        self._measure_queue.push(next_measure)
+        measurement = {'frequency': None, 'error': None}
+        if isinstance(frequency_or_error, float):
+            measure_record = Measurement(setting=setting, frequency=frequency_or_error)
+            measurement['frequency'] = frequency_or_error
+        else:
+            measure_record = Measurement(setting=setting, error=frequency_or_error)
+            measurement['error'] = frequency_or_error
+        measure_record.save()
+        measurement['measured_at'] = measure_record.measured_at.isoformat()
+        return dict_to_camel(measurement)
+
     def _calibrate(self, channel: int, frequency: float):
         self._wlm.calibrate(source_type='other', source_frequency=frequency, channel=channel)
 
@@ -112,22 +132,8 @@ class TaskHandler(threading.Thread):
                     continue
                 channel = measure.channel
                 self._switch(channel)
-                frequency_or_error = self._wlm.get_frequency(
-                    channel=channel, error_on_invalid=False, wait=True, timeout=3)
-                setting = self._channel_to_setting[channel]
-                deadline = timezone.now() + setting.period
-                next_measure = MeasureInfo(channel, deadline)
-                self._measure_queue.push(next_measure)
-                measurement = {'frequency': None, 'error': None}
-                if isinstance(frequency_or_error, float):
-                    measure_record = Measurement(setting=setting, frequency=frequency_or_error)
-                    measurement['frequency'] = frequency_or_error
-                else:
-                    measure_record = Measurement(setting=setting, error=frequency_or_error)
-                    measurement['error'] = frequency_or_error
-                measure_record.save()
-                measurement['measured_at'] = measure_record.measured_at.isoformat()
-                measurements[channel].append(dict_to_camel(measurement))
+                measurement = self._measure_channel(channel)
+                measurements[channel].append(measurement)
             channel_layer = get_channel_layer()
             for channel, channel_measurements in measurements.items():
                 async_to_sync(channel_layer.group_send)(
