@@ -1,12 +1,29 @@
 """Module for message queue from request handler to PID handler."""
 
 import dataclasses
+import enum
 import queue
+from typing import Any
+
+class ActionType(enum.Enum):
+    """Action type."""
+    CLOSE = 'close'
+
 
 @dataclasses.dataclass
 class PidMessageInfo:
-    """PID message info."""
+    """PID message info.
+    
+    Fields:
+        action: Action type.
+        data: Additional arguments for action.
 
+    Actions:
+        CLOSE: Close all the DAC connections.
+          data: None.
+    """
+    action: ActionType
+    data: dict[str, Any] | None
 
 class PidMessageQueue:
     """Thread-safe message queue from request handler to PID handler."""
