@@ -17,6 +17,9 @@ class DacControlConsumer(AsyncWebsocketConsumer):
     # pylint: disable=attribute-defined-outside-init
     async def connect(self):
         user = self.scope['user']
+        if not user.is_authenticated:
+            await self.close(code=401)
+            return
         ch = self.scope['url_route']['kwargs']['ch']
         channel, error_code = await database_sync_to_async(util.verify_channel_access)(user, ch)
         if channel is None:
