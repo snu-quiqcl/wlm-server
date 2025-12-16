@@ -24,7 +24,7 @@ def handle_info(request):
 @api_view(['GET'])
 def handle_single_info(request, ch: int):
     user = request.user
-    channel, error_code = util.verify_channel_access(user, ch, False)
+    channel, error_code = util.verify_channel_access(user, ch)
     if channel is None:
         return HttpResponse(status=error_code)
     data = ChannelInfoSerializer(channel, context={'username': user.username}).data
