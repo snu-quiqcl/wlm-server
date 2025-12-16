@@ -8,6 +8,7 @@ class Event(models.Model):
         USER = 'US', 'user'
         OPERATION = 'OP', 'operation'
         SETTING = 'ST', 'setting'
+        PID = 'PD', 'pid'
         LOCK = 'LK', 'lock'
         CONFIG = 'CF', 'config'
 
