@@ -12,7 +12,7 @@ class ChannelAdmin(admin.ModelAdmin):
             },
         ),
     ]
-    list_display = ['channel', 'name', 'dac_device', 'dac_channel']
-    list_filter = ['teams', 'dac_device']
-    search_fields = ['name', 'dac_device', 'dac_channel']
+    list_display = ['channel', 'name', 'dac_device__name', 'dac_channel']
+    list_filter = ['teams', 'dac_device__name']
+    search_fields = ['name', 'dac_device__name', 'dac_channel']
     ordering = ['channel']
