@@ -1,6 +1,7 @@
 import json
 
 from django.conf import settings
+from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 from pid.dac_control import DacControlInfo
@@ -17,7 +18,7 @@ class DacControlConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         user = self.scope['user']
         ch = self.scope['url_route']['kwargs']['ch']
-        channel, error_code = util.verify_channel_access(user, ch)
+        channel, error_code = await database_sync_to_async(util.verify_channel_access)(user, ch)
         if channel is None:
             await self.close(code=error_code)
             return
