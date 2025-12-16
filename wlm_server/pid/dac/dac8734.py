@@ -47,7 +47,7 @@ class DAC8734(BaseDAC):
 
     def set_voltage(self, channel: int, voltage: float):
         """Overridden."""
-        if not (0 <= channel < self.NUM_CHANNELS):
+        if not 0 <= channel < self.NUM_CHANNELS:
             print(f'Invalid channel: {channel}')
             return
         if voltage < self.MIN_V or voltage > self.MAX_V:

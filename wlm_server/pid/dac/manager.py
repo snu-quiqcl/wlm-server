@@ -34,7 +34,7 @@ class DacManager:
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._instances: Dict[Tuple[str, str], BaseDAC] = {}
-    
+
     def get_or_open(self, backend_alias: str, port: str) -> BaseDAC:
         """Gets existing DAC instance for (backend_alias, port), or creates one.
 
@@ -50,8 +50,8 @@ class DacManager:
             dac = self._instances.get(key)
             if dac is not None:
                 return dac
-            DacClass = get_dac_class(backend_alias)
-            dac = DacClass(port)
+            dac_class = get_dac_class(backend_alias)
+            dac = dac_class(port)
             dac.open()
             self._instances[key] = dac
             return dac
