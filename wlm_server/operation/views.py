@@ -9,8 +9,10 @@ from asgiref.sync import async_to_sync
 
 from operation.models import Operation
 from event.models import Event
-from task.message import ActionType, MessageInfo, MessageQueue
+from task import message as task_message
 from task.handler import TaskHandler
+from pid import message as pid_message
+from pid.handler import PidHandler
 from cache.channel import ChannelCache
 from utils import util
 
@@ -22,7 +24,8 @@ def handle_info(request, ch: int):  # pylint: disable=too-many-locals
     channel, error_code = util.verify_channel_access(user, ch)
     if channel is None:
         return HttpResponse(status=error_code)
-    message_queue: MessageQueue = settings.MESSAGE_QUEUE
+    task_message_queue: task_message.MessageQueue = settings.MESSAGE_QUEUE
+    pid_message_queue: pid_message.PidMessageQueue = settings.PID_MESSAGE_QUEUE
     channel_cache: ChannelCache = settings.CHANNEL_CACHE
     req_data = request.data.copy()
     on = req_data['on']
@@ -32,17 +35,20 @@ def handle_info(request, ch: int):  # pylint: disable=too-many-locals
                           f'{user.username} requested measurement of channel {ch}.')
         if not util.is_channel_running(ch):
             setting = channel_cache.get_setting(ch)
-            message = MessageInfo(ActionType.SETTING, ch,
+            message = task_message.MessageInfo(task_message.ActionType.SETTING, ch,
                                   {'setting': setting, 'update_exposure': True})
-            message_queue.push(message)
+            task_message_queue.push(message)
             if not util.is_wlm_running():
-                message = MessageInfo(ActionType.START, ch, None)
-                message_queue.push(message)
+                message = task_message.MessageInfo(task_message.ActionType.START, ch, None)
+                task_message_queue.push(message)
                 task_handler = TaskHandler()
                 task_handler.start()
                 util.record_event(Event.EventType.OPERATION, 'WLM started.')
-            message = MessageInfo(ActionType.OPERATE, ch, {'on': True})
-            message_queue.push(message)
+                pid_handler = PidHandler()
+                pid_handler.start()
+                util.record_event(Event.EventType.PID, 'PID handler started.')
+            message = task_message.MessageInfo(task_message.ActionType.OPERATE, ch, {'on': True})
+            task_message_queue.push(message)
             util.record_event(Event.EventType.OPERATION, f'Measurement of channel {ch} started.')
         operation.save()
     else:
@@ -50,15 +56,18 @@ def handle_info(request, ch: int):  # pylint: disable=too-many-locals
                           f'{user.username} requested to stop the measurement of channel {ch}.')
         operation.save()
         if not util.is_channel_running(ch):
-            message = MessageInfo(ActionType.OPERATE, ch, {'on': False})
-            message_queue.push(message)
+            message = task_message.MessageInfo(task_message.ActionType.OPERATE, ch, {'on': False})
+            task_message_queue.push(message)
             util.record_event(Event.EventType.OPERATION, f'Measurement of channel {ch} stopped.')
             if not util.is_wlm_running():
-                message = MessageInfo(ActionType.STOP, None, None)
-                message_queue.push(message)
-                message = MessageInfo(ActionType.CLOSE, None, None)
-                message_queue.push(message)
+                message = task_message.MessageInfo(task_message.ActionType.STOP, None, None)
+                task_message_queue.push(message)
+                message = task_message.MessageInfo(task_message.ActionType.CLOSE, None, None)
+                task_message_queue.push(message)
                 util.record_event(Event.EventType.OPERATION, 'WLM stopped.')
+                message = pid_message.PidMessageInfo(pid_message.ActionType.CLOSE, None)
+                pid_message_queue.push(message)
+                util.record_event(Event.EventType.PID, 'PID handler stopped.')
     requesters = [op.user.username for op in channel_cache.get_operations(ch).values() if op.on]
     notif = {'on': on, 'requesters': requesters}
     channel_layer = get_channel_layer()
