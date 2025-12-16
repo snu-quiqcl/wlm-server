@@ -180,7 +180,7 @@ LOCK_LOCK = threading.Lock()
 # DAC
 
 DAC_BACKENDS = {
-    'dac8734': 'pid.dac.dac8734.DAC8734',
+    'DAC8734': 'pid.dac.dac8734.DAC8734',
 }
 
 DAC_MANAGER = DacManager()
