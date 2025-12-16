@@ -45,7 +45,7 @@ class MeasurementConsumer(AsyncWebsocketConsumer):
         Args:
             event: Dictionary with two keys.
               type: Please refer to the documentation of Channels.
-              message: Dictionary with three keys.
+              message: List of dictionaries with three keys.
                 frequency: Measured frequency in Hz. If an error occurs, it is set to None.
                 error: Occurred error code. Please refer to the documentation of pylablib. If no
                   error occurs, it is set to None.
