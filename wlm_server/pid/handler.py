@@ -1,9 +1,12 @@
 """Module for PID handler with DAC."""
 
+import time
 import threading
-from collections import defaultdict
+import json
 
 from django.conf import settings
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 from channel.models import Channel
 from .dac_control import DacControlQueue
@@ -19,8 +22,7 @@ class PidHandler(threading.Thread):
         self._dac_control_queue: DacControlQueue = settings.DAC_CONTROL_QUEUE
         # {channel: (backend_alias, port, dac_channel)}
         self._channel_to_dac_info: dict[int, tuple[str, str, int]] = {}
-        # {channel: dac_voltage}
-        self._channel_to_dac_voltage: dict[int, float] = defaultdict(float)
+        self._dac_control_slice_seconds = 0.5
 
     def _get_dac_info(self, ch: int) -> tuple[str, str, int]:
         """Gets the DAC information for the given channel.
@@ -48,18 +50,7 @@ class PidHandler(threading.Thread):
         backend_alias, port, dac_channel = self._get_dac_info(channel)
         dac = settings.DAC_MANAGER.get_or_open(backend_alias, port)
         dac.set_voltage(dac_channel, voltage)
-        self._channel_to_dac_output[channel] = voltage
-
-    def _get_dac_voltage(self, channel: int) -> float:
-        """Gets the voltage for the given channel.
-        
-        Args:
-            channel: Target WLM channel.
-        
-        Returns:
-            Voltage in V.
-        """
-        return self._channel_to_dac_voltage[channel]
+        settings.CHANNEL_CACHE.set_dac_voltage(channel, voltage)
 
     def run(self):
         while True:
@@ -69,7 +60,18 @@ class PidHandler(threading.Thread):
                     case ActionType.CLOSE:
                         settings.DAC_MANAGER.close_all()
                         return
-            dac_control = self._dac_control_queue.pop()
-            if dac_control is None:
-                continue
-            self._set_dac_voltage(dac_control.channel, dac_control.voltage)
+            channels: set[int] = set()
+            dac_control_slice_deadline = time.monotonic() + self._dac_control_slice_seconds
+            while time.monotonic() < dac_control_slice_deadline:
+                dac_control = self._dac_control_queue.pop()
+                if dac_control is None:
+                    continue
+                self._set_dac_voltage(dac_control.channel, dac_control.voltage)
+                channels.add(dac_control.channel)
+            channel_layer = get_channel_layer()
+            for channel in channels:
+                voltage = settings.CHANNEL_CACHE.get_dac_voltage(channel)
+                async_to_sync(channel_layer.group_send)(
+                    f'channel_{channel}_dac_output',
+                    {'type': 'notify', 'message': json.dumps({'voltage': voltage})}
+                )

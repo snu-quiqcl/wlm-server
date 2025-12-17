@@ -65,7 +65,7 @@ class DacOutputConsumer(AsyncWebsocketConsumer):
         self.group_name = f'channel_{ch}_dac_output'
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
-        voltage = settings.PID_HANDLER.get_dac_voltage(ch)
+        voltage = settings.CHANNEL_CACHE.get_dac_voltage(ch)
         await self.send(text_data=json.dumps({'voltage': voltage}))
 
     async def disconnect(self, code):
