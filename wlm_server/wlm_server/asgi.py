@@ -41,7 +41,7 @@ application = ProtocolTypeRouter(
                     path('ws/setting/<int:ch>/', SettingConsumer.as_asgi()),
                     path('ws/measurement/<int:ch>/', MeasurementConsumer.as_asgi()),
                     path('ws/lock/<int:ch>/', LockConsumer.as_asgi()),
-                    path('ws/pid_setting/<int:ch>/', DacControlConsumer.as_asgi()),
+                    path('ws/pid_setting/dac_control/<int:ch>/', DacControlConsumer.as_asgi()),
                     path('ws/event/', EventConsumer.as_asgi()),
                 ])
             )
