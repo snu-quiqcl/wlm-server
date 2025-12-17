@@ -52,6 +52,7 @@ class DacOutputConsumer(AsyncWebsocketConsumer):
         group_name: Name of group it belongs to in the channel layer.
     """
 
+    # pylint: disable=attribute-defined-outside-init
     async def connect(self):
         user = self.scope['user']
         if not user.is_authenticated:
