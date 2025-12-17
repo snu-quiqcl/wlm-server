@@ -43,3 +43,42 @@ class DacControlConsumer(AsyncWebsocketConsumer):
         if action == 'voltage':
             voltage = payload['voltage']
             settings.DAC_CONTROL_QUEUE.push(DacControlInfo(self.channel.channel, voltage))
+
+
+class DacOutputConsumer(AsyncWebsocketConsumer):
+    """Consumer for notifying the DAC output of a specific channel.
+    
+    Attributes:
+        group_name: Name of group it belongs to in the channel layer.
+    """
+
+    async def connect(self):
+        user = self.scope['user']
+        if not user.is_authenticated:
+            await self.close(code=401)
+            return
+        ch = self.scope['url_route']['kwargs']['ch']
+        channel, error_code = await database_sync_to_async(util.verify_channel_access)(user, ch)
+        if channel is None:
+            await self.close(code=error_code)
+            return
+        self.group_name = f'channel_{ch}_dac_output'
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+        voltage = settings.PID_HANDLER.get_dac_voltage(ch)
+        await self.send(text_data=json.dumps({'voltage': voltage}))
+
+    async def disconnect(self, code):
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    async def notify(self, event: dict[str, str]):
+        """Notifies the DAC output to the channels that belong to the same group.
+        
+        Args:
+            event: Dictionary with two keys.
+              type: Please refer to the documentation of Channels.
+              message: Dictionary with one key.
+                voltage: Updated DAC voltage in V.
+        """
+        message = event['message']
+        await self.send(text_data=message)
