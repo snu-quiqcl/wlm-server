@@ -1,6 +1,7 @@
 """Module for PID handler with DAC."""
 
 import threading
+from collections import defaultdict
 
 from django.conf import settings
 
@@ -18,6 +19,8 @@ class PidHandler(threading.Thread):
         self._dac_control_queue: DacControlQueue = settings.DAC_CONTROL_QUEUE
         # {channel: (backend_alias, port, dac_channel)}
         self._channel_to_dac_info: dict[int, tuple[str, str, int]] = {}
+        # {channel: dac_voltage}
+        self._channel_to_dac_voltage: dict[int, float] = defaultdict(float)
 
     def _get_dac_info(self, ch: int) -> tuple[str, str, int]:
         """Gets the DAC information for the given channel.
@@ -45,6 +48,18 @@ class PidHandler(threading.Thread):
         backend_alias, port, dac_channel = self._get_dac_info(channel)
         dac = settings.DAC_MANAGER.get_or_open(backend_alias, port)
         dac.set_voltage(dac_channel, voltage)
+        self._channel_to_dac_output[channel] = voltage
+
+    def _get_dac_voltage(self, channel: int) -> float:
+        """Gets the voltage for the given channel.
+        
+        Args:
+            channel: Target WLM channel.
+        
+        Returns:
+            Voltage in V.
+        """
+        return self._channel_to_dac_voltage[channel]
 
     def run(self):
         while True:
