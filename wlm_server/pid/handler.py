@@ -60,16 +60,17 @@ class PidHandler(threading.Thread):
                     case ActionType.CLOSE:
                         settings.DAC_MANAGER.close_all()
                         return
-            channels: set[int] = set()
+            latest_commands: dict[int, float] = {}
             dac_control_slice_deadline = time.monotonic() + self._dac_control_slice_seconds
             while time.monotonic() < dac_control_slice_deadline:
                 dac_control = self._dac_control_queue.pop()
                 if dac_control is None:
                     continue
-                self._set_dac_voltage(dac_control.channel, dac_control.voltage)
-                channels.add(dac_control.channel)
+                latest_commands[dac_control.channel] = dac_control.voltage
+            for channel, voltage in latest_commands.items():
+                self._set_dac_voltage(channel, voltage)
             channel_layer = get_channel_layer()
-            for channel in channels:
+            for channel in latest_commands:
                 voltage = settings.CHANNEL_CACHE.get_dac_voltage(channel)
                 async_to_sync(channel_layer.group_send)(
                     f'channel_{channel}_dac_output',
