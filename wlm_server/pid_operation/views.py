@@ -18,7 +18,7 @@ from utils import util
 @api_view(['POST'])
 def handle_info(request, ch: int):
     user = request.user
-    channel, error_code = util.verify_channel_access(user, ch)
+    channel, error_code = util.verify_channel_access(user, ch, check_lock=True)
     if channel is None:
         return HttpResponse(status=error_code)
     pid_message_queue: pid_message.PidMessageQueue = settings.PID_MESSAGE_QUEUE
@@ -29,6 +29,14 @@ def handle_info(request, ch: int):
     if on:
         util.record_event(Event.EventType.PID,
                           f'{user.username} requested to enable PID control for channel {ch}.')
+        operations = channel_cache.get_operations(ch)
+        if not user.username in operations:
+            util.record_event(
+                Event.EventType.WARNING,
+                f'Cannot enable PID control for channel {ch} because {user.username} is not '
+                'performing an operation. This request has been ignored.'
+            )
+            return HttpResponse(status=409)
         if not util.is_channel_pid_enabled(ch):
             message = pid_message.PidMessageInfo(pid_message.ActionType.ON, {'channel': ch})
             pid_message_queue.push(message)
@@ -42,8 +50,7 @@ def handle_info(request, ch: int):
             message = pid_message.PidMessageInfo(pid_message.ActionType.OFF, {'channel': ch})
             pid_message_queue.push(message)
             util.record_event(Event.EventType.PID, f'PID control for channel {ch} disabled.')
-    requesters = [op.user.username for op in channel_cache.get_pid_operations(ch).values() if op.on]
-    notif = {'on': util.is_channel_pid_enabled(ch), 'requesters': requesters}
+    notif = {'on': util.is_channel_pid_enabled(ch)}
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
         f'channel_{ch}_pid_operation', {'type': 'notify', 'message': json.dumps(notif)}

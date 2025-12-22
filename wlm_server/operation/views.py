@@ -54,6 +54,14 @@ def handle_info(request, ch: int):  # pylint: disable=too-many-locals
     else:
         util.record_event(Event.EventType.OPERATION,
                           f'{user.username} requested to stop the measurement of channel {ch}.')
+        pid_operation = channel_cache.get_pid_operation(ch)
+        if pid_operation is not None and pid_operation.user == user:
+            util.record_event(
+                Event.EventType.WARNING,
+                f'Cannot stop operation for channel {ch} because {user.username} is performing a '
+                'PID operation. This request has been ignored.'
+            )
+            return HttpResponse(status=409)
         operation.save()
         if not util.is_channel_running(ch):
             message = task_message.MessageInfo(task_message.ActionType.OPERATE, ch, {'on': False})
