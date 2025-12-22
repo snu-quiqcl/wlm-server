@@ -3,6 +3,7 @@
 from collections import defaultdict
 
 from operation.models import Operation
+from pid_operation.models import PidOperation
 from setting.models import Setting
 from lock.models import Lock
 
@@ -12,6 +13,8 @@ class ChannelCache:
     def __init__(self):
         # outer key: Channel__channel, inner key: User__username
         self._channel_to_operation: defaultdict[int, dict[str, Operation]] = defaultdict(dict)
+        # outer key: Channel__channel, inner key: User__username
+        self._channel_to_pid_operation: defaultdict[int, dict[str, PidOperation]] = defaultdict(dict)
         # key: Channel__channel
         self._channel_to_setting: dict[int, Setting] = {}
         # key: Channel__channel
@@ -35,6 +38,16 @@ class ChannelCache:
             operation: The latest operation.
         """
         self._channel_to_operation[operation.channel.channel][operation.user.username] = operation
+
+    def set_pid_operation(self, pid_operation: PidOperation):
+        """Stores the given PID operation as the latest.
+        
+        Args:
+            pid_operation: The latest PID operation.
+        """
+        self._channel_to_pid_operation[
+            pid_operation.channel.channel
+        ][pid_operation.user.username] = pid_operation
 
     def set_setting(self, setting: Setting):
         """Stores the given setting as the latest.
@@ -79,6 +92,17 @@ class ChannelCache:
             Dictionary with user name as the key and the latest operation status as the value.
         """
         return self._channel_to_operation[channel]
+
+    def get_pid_operations(self, channel: int) -> dict[str, PidOperation]:
+        """Returns the latest PID operation status for the given channel.
+        
+        Args:
+            channel: Target channel.
+
+        Returns:
+            Dictionary with user name as the key and the latest PID operation status as the value.
+        """
+        return self._channel_to_pid_operation[channel]
 
     def get_setting(self, channel: int) -> Setting:
         """Returns the latest setting for the given channel.
