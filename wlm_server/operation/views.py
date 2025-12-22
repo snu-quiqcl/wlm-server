@@ -3,6 +3,7 @@ import json
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
+from django.views.decorators.http import require_http_methods
 from rest_framework.decorators import api_view
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -18,6 +19,7 @@ from utils import util
 
 @util.task_synchronized
 @login_required
+@require_http_methods(['POST'])
 @api_view(['POST'])
 def handle_info(request, ch: int):  # pylint: disable=too-many-locals, too-many-statements
     user = request.user
