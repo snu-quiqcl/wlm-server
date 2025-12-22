@@ -24,5 +24,6 @@ urlpatterns = [
     path('api/operation/', include('operation.urls')),
     path('api/calibration/', include('calibration.urls')),
     path('api/lock/', include('lock.urls')),
+    path('api/pid_operation/', include('pid_operation.urls')),
     path('admin/', admin.site.urls),
 ]
