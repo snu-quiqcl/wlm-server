@@ -19,7 +19,7 @@ from utils import util
 @util.task_synchronized
 @login_required
 @api_view(['POST'])
-def handle_info(request, ch: int):  # pylint: disable=too-many-locals
+def handle_info(request, ch: int):  # pylint: disable=too-many-locals, too-many-statements
     user = request.user
     channel, error_code = util.verify_channel_access(user, ch)
     if channel is None:
