@@ -5,6 +5,7 @@ from collections import defaultdict
 from operation.models import Operation
 from pid_operation.models import PidOperation
 from setting.models import Setting
+from pid_setting.models import PidSetting
 from lock.models import Lock
 
 class ChannelCache:
@@ -20,6 +21,8 @@ class ChannelCache:
         # key: Channel__channel
         self._channel_to_pid_operation: dict[int, PidOperation] = {}
         # key: Channel__channel
+        self._channel_to_pid_setting: dict[int, PidSetting] = {}
+        # key: Channel__channel
         self._channel_to_lock: dict[int, Lock] = {}
         self._channel_to_dac_voltage: dict[int, float] = defaultdict(float)
         self._load()
@@ -29,6 +32,9 @@ class ChannelCache:
         settings = Setting.objects.order_by('channel', '-created_at').distinct('channel')
         for setting in settings:
             self._channel_to_setting[setting.channel.channel] = setting
+        pid_settings = PidSetting.objects.order_by('channel', '-created_at').distinct('channel')
+        for pid_setting in pid_settings:
+            self._channel_to_pid_setting[pid_setting.channel.channel] = pid_setting
         locks = (Lock.objects.order_by('channel', '-started_at').distinct('channel'))
         for lock in locks:
             self._channel_to_lock[lock.channel.channel] = lock
@@ -56,6 +62,14 @@ class ChannelCache:
             pid_operation: The latest PID operation.
         """
         self._channel_to_pid_operation[pid_operation.channel.channel] = pid_operation
+
+    def set_pid_setting(self, pid_setting: PidSetting):
+        """Stores the given PID setting as the latest.
+        
+        Args:
+            pid_setting: The latest PID setting.
+        """
+        self._channel_to_pid_setting[pid_setting.channel.channel] = pid_setting
 
     def set_lock(self, lock: Lock):
         """Stores the given lock as the latest.
@@ -133,6 +147,17 @@ class ChannelCache:
             The latest PID operation. If there is no PID operation, it returns None.
         """
         return self._channel_to_pid_operation.get(channel, None)
+
+    def get_pid_setting(self, channel: int) -> PidSetting | None:
+        """Returns the latest PID setting for the given channel.
+        
+        Args:
+            channel: Target channel.
+
+        Returns:
+            The latest PID setting. If there is no PID setting, it returns None.
+        """
+        return self._channel_to_pid_setting.get(channel, None)
 
     def get_lock(self, channel: int) -> Lock | None:
         """Returns the latest lock for the given channel.
