@@ -30,12 +30,10 @@ class BaseDAC(ABC):
     @abstractmethod
     def open(self):
         """Opens the DAC connection."""
-        self._is_open = True
 
     @abstractmethod
     def close(self):
         """Closes the DAC connection."""
-        self._is_open = False
 
     @abstractmethod
     def set_voltage(self, channel: int, voltage: float):
@@ -45,4 +43,3 @@ class BaseDAC(ABC):
             channel: Target channel.
             voltage: Target voltage in V.
         """
-        raise NotImplementedError
