@@ -54,7 +54,7 @@ class DAC8734(BaseDAC):
         if not 0 <= channel < self.NUM_CHANNELS:
             logger.warning(f'Invalid channel: {channel}')
             return
-        if voltage < self.MIN_V or voltage > self.MAX_V:
+        if not self.MIN_V <= voltage <= self.MAX_V:
             logger.warning(f'Voltage out of range: {voltage}')
             return
         code = self._volts_to_code(voltage)
