@@ -77,5 +77,5 @@ class DacManager:
         with self._lock:
             for dac in self._instances.values():
                 if dac.is_open:
-                   dac.close()
+                    dac.close()
             self._instances.clear()
