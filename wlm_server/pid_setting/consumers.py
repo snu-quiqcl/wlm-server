@@ -106,7 +106,7 @@ class PidSettingConsumer(AsyncWebsocketConsumer):
         self.group_name = f'channel_{ch}_pid_setting'
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
-        pid_setting = settings.CHANNEL_CACHE.get_pid_setting(self.ch)
+        pid_setting = settings.CHANNEL_CACHE.get_pid_setting(ch)
         await self.send(text_data=json.dumps({
             'target_frequency': pid_setting.target_frequency,
             'kp': pid_setting.kp,
