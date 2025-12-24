@@ -9,6 +9,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 from channel.models import Channel
+from pid_setting.models import PidSetting
 from .dac_control import DacControlQueue
 from .message import ActionType, PidMessageQueue
 
@@ -24,6 +25,8 @@ class PidHandler(threading.Thread):
         self._channel_to_dac_info: dict[int, tuple[str, str, int]] = {}
         # {channel: pid_enabled}
         self._channel_to_pid_enabled: dict[int, bool] = {}
+        # {channel: pid_setting}
+        self._channel_to_pid_setting: dict[int, PidSetting] = {}
         self._dac_control_slice_seconds = 0.5
 
     def _get_dac_info(self, ch: int) -> tuple[str, str, int]:
@@ -66,6 +69,8 @@ class PidHandler(threading.Thread):
                         self._channel_to_pid_enabled[data['channel']] = True
                     case ActionType.OFF:
                         self._channel_to_pid_enabled[data['channel']] = False
+                    case ActionType.SETTING:
+                        self._channel_to_pid_setting[data['channel']] = data['pid_setting']
             # DAC control
             latest_commands: dict[int, float] = {}
             dac_control_slice_deadline = time.monotonic() + self._dac_control_slice_seconds
