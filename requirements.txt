@@ -8,5 +8,6 @@ psycopg==3.2.*
 channels==4.2.*
 whitenoise==6.8.*
 pylablib==1.4.*
+pyserial==3.5
 camel-converter==4.0.*
 git+https://github.com/snu-quiqcl/qcodes-driver.git@2ce8309707cd60973580befb70b6dcd3afb832d8
