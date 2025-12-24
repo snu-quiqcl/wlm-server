@@ -76,5 +76,6 @@ class DacManager:
         """Closes all DAC instances."""
         with self._lock:
             for dac in self._instances.values():
-                dac.close()
+                if dac.is_open:
+                   dac.close()
             self._instances.clear()
