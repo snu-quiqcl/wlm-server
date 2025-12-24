@@ -1,9 +1,13 @@
 """Module for DAC8734 controlled via an ArtyS7 FPGA."""
 
+import logging
+
 import serial
 from qcodes_driver.AD9912.ArtyS7 import ArtyS7
 
 from .base import BaseDAC
+
+logger = logging.getLogger(__name__)
 
 class DAC8734(BaseDAC):
     """DAC8734 controlled via an ArtyS7 FPGA.
@@ -27,19 +31,19 @@ class DAC8734(BaseDAC):
     def open(self):
         """Overridden."""
         if self._is_open:
-            print(f'DAC8734 on {self._port} is already open')
+            logger.warning(f'DAC8734 on {self._port} is already open')
             return
         try:
             self._fpga = ArtyS7(self._port)
         except serial.SerialException as e:
-            print(f'Failed to open DAC8734: {e}')
+            logger.error(f'Failed to open DAC8734: {e}')
         else:
             self._is_open = True
 
     def close(self):
         """Overridden."""
         if not self._is_open:
-            print(f'DAC8734 on {self._port} is not open')
+            logger.warning(f'DAC8734 on {self._port} is not open')
             return
         self._fpga.close()
         self._fpga = None
@@ -48,10 +52,10 @@ class DAC8734(BaseDAC):
     def set_voltage(self, channel: int, voltage: float):
         """Overridden."""
         if not 0 <= channel < self.NUM_CHANNELS:
-            print(f'Invalid channel: {channel}')
+            logger.warning(f'Invalid channel: {channel}')
             return
         if voltage < self.MIN_V or voltage > self.MAX_V:
-            print(f'Voltage out of range: {voltage}')
+            logger.warning(f'Voltage out of range: {voltage}')
             return
         code = self._volts_to_code(voltage)
         dac_number = channel // 4
