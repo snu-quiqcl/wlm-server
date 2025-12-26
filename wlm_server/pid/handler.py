@@ -102,7 +102,7 @@ class PidHandler(threading.Thread):
                 dt = current_time - pid_state['last_time']
                 error = pid_setting.target_frequency - frequency_info.frequency
                 # Safety check: large error
-                if abs(error) >= self._max_error_threshold_hz:
+                if abs(error) >= MAX_ERROR_THRESHOLD_HZ:
                     self._channel_to_pid_enabled[channel] = False
                     error_ghz = abs(error) / 1e9
                     record_event(
