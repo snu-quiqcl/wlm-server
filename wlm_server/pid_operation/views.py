@@ -39,10 +39,26 @@ def handle_info(request, ch: int):
                 'performing an operation. This request has been ignored.'
             )
             return HttpResponse(status=409)
-        if not util.is_channel_pid_enabled(ch):
-            message = pid_message.PidMessageInfo(pid_message.ActionType.ON, {'channel': ch})
-            pid_message_queue.push(message)
-            util.record_event(Event.EventType.PID, f'PID control for channel {ch} enabled.')
+        if util.is_channel_pid_enabled(ch):
+            util.record_event(
+                Event.EventType.WARNING,
+                f'PID control for channel {ch} is already enabled. This request has been ignored.'
+            )
+            return HttpResponse(status=409)
+        pid_setting = channel_cache.get_pid_setting(ch)
+        if pid_setting is None:
+            util.record_event(
+                Event.EventType.WARNING,
+                f'Cannot enable PID control for channel {ch} because no PID setting is set. '
+                'This request has been ignored.'
+            )
+            return HttpResponse(status=409)
+        message = pid_message.PidMessageInfo(
+            pid_message.ActionType.SETTING, {'channel': ch, 'pid_setting': pid_setting})
+        pid_message_queue.push(message)
+        message = pid_message.PidMessageInfo(pid_message.ActionType.ON, {'channel': ch})
+        pid_message_queue.push(message)
+        util.record_event(Event.EventType.PID, f'PID control for channel {ch} enabled.')
         pid_operation.save()
     else:
         util.record_event(Event.EventType.PID,
