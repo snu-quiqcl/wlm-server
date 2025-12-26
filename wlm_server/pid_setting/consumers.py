@@ -3,6 +3,7 @@ import json
 from django.conf import settings
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from camel_converter import dict_to_camel
 
 from pid.dac_control import DacControlInfo
 from utils import util
@@ -107,12 +108,12 @@ class PidSettingConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
         pid_setting = settings.CHANNEL_CACHE.get_pid_setting(ch)
-        await self.send(text_data=json.dumps({
+        await self.send(text_data=json.dumps(dict_to_camel({
             'target_frequency': pid_setting.target_frequency,
             'kp': pid_setting.kp,
             'ki': pid_setting.ki,
             'kd': pid_setting.kd
-        }))
+        })))
 
     async def disconnect(self, code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
