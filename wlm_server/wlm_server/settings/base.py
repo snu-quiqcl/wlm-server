@@ -17,6 +17,7 @@ from pathlib import Path
 from decouple import Config, RepositoryEnv
 
 from task.message import MessageQueue
+from pid.dac.manager import DacManager
 from pid.message import PidMessageQueue
 from pid.dac_control import DacControlQueue
 from pid.frequency import FrequencyQueue
@@ -174,3 +175,12 @@ CHANNEL_CACHE = None
 
 TASK_LOCK = threading.Lock()
 LOCK_LOCK = threading.Lock()
+
+
+# DAC
+
+DAC_BACKENDS = {
+    'DAC8734': 'pid.dac.dac8734.DAC8734',
+}
+
+DAC_MANAGER = DacManager()
