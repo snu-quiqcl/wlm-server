@@ -7,6 +7,7 @@ from django.views.decorators.http import require_http_methods
 from rest_framework.decorators import api_view
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from camel_converter import dict_to_camel
 
 from pid_setting.models import PidSetting
 from event.models import Event
@@ -65,7 +66,7 @@ def handle_info(request, ch: int):  # pylint: disable=too-many-locals
     pid_message_queue.push(message)
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
-        f'channel_{ch}_pid_setting', {'type': 'notify', 'message': json.dumps(notif)}
+        f'channel_{ch}_pid_setting', {'type': 'notify', 'message': json.dumps(dict_to_camel(notif))}
     )
     joined_event_content = ', '.join(event_content)
     util.record_event(
