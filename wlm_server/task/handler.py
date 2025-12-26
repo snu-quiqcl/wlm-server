@@ -19,6 +19,7 @@ from setting.models import Setting
 from measurement.models import Measurement
 from .message import ActionType, MessageQueue
 from .measure import MeasureInfo, MeasureQueue
+from pid.frequency import FrequencyInfo
 
 MEASUREMENT_SLICE_SECONDS = 0.5
 
@@ -87,6 +88,9 @@ class TaskHandler(threading.Thread):
         if isinstance(frequency_or_error, float):
             measure_record = Measurement(setting=setting, frequency=frequency_or_error)
             measurement['frequency'] = frequency_or_error
+            pid_operation = settings.CHANNEL_CACHE.get_pid_operation(channel)
+            if pid_operation is not None:
+                settings.FREQUENCY_QUEUE.push(FrequencyInfo(channel, frequency_or_error))
         else:
             measure_record = Measurement(setting=setting, error=frequency_or_error)
             measurement['error'] = frequency_or_error
