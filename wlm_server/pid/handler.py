@@ -10,8 +10,12 @@ from asgiref.sync import async_to_sync
 
 from channel.models import Channel
 from pid_setting.models import PidSetting
+from event.models import Event
 from .dac_control import DacControlQueue
 from .message import ActionType, PidMessageQueue
+from utils.util import record_event
+
+MAX_ERROR_THRESHOLD_HZ = 10e9
 
 class PidHandler(threading.Thread):
     """PID handler for configuring and running feedback control on WLM channels."""
@@ -27,6 +31,9 @@ class PidHandler(threading.Thread):
         self._channel_to_pid_enabled: dict[int, bool] = {}
         # {channel: pid_setting}
         self._channel_to_pid_setting: dict[int, PidSetting] = {}
+        # {channel: {'prev_error': float, 'integral': float, 'last_time': float}}
+        self._channel_to_pid_state: dict[int, dict[str, float]] = {}
+        self._pid_slice_seconds = 0.5
         self._dac_control_slice_seconds = 0.5
 
     def _get_dac_info(self, ch: int) -> tuple[str, str, int]:
@@ -66,11 +73,87 @@ class PidHandler(threading.Thread):
                         settings.DAC_MANAGER.close_all()
                         return
                     case ActionType.ON:
-                        self._channel_to_pid_enabled[data['channel']] = True
+                        channel = data['channel']
+                        self._channel_to_pid_enabled[channel] = True
+                        self._channel_to_pid_state[channel] = {
+                            'prev_error': 0.0,
+                            'integral': 0.0,
+                            'last_time': time.monotonic()
+                        }
                     case ActionType.OFF:
-                        self._channel_to_pid_enabled[data['channel']] = False
+                        channel = data['channel']
+                        self._channel_to_pid_enabled[channel] = False
                     case ActionType.SETTING:
                         self._channel_to_pid_setting[data['channel']] = data['pid_setting']
+            # PID
+            pid_slice_deadline = time.monotonic() + self._pid_slice_seconds
+            while time.monotonic() < pid_slice_deadline:
+                frequency_info = settings.FREQUENCY_QUEUE.pop()
+                if frequency_info is None:
+                    continue
+                channel = frequency_info.channel
+                # Skip if PID not enabled
+                if not self._channel_to_pid_enabled.get(channel, False):
+                    continue
+                pid_setting = self._channel_to_pid_setting.get(channel)
+                pid_state = self._channel_to_pid_state.get(channel)
+                # Calculate PID
+                current_time = time.monotonic()
+                dt = current_time - pid_state['last_time']
+                error = pid_setting.target_frequency - frequency_info.frequency
+                # Safety check: large error
+                if abs(error) >= self._max_error_threshold_hz:
+                    self._channel_to_pid_enabled[channel] = False
+                    error_ghz = abs(error) / 1e9
+                    record_event(
+                        Event.EventType.PID,
+                        f'PID disabled for channel {channel} due to large error '
+                        f'({error_ghz:.3f} GHz).'
+                    )
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                        f'channel_{channel}_pid_operation',
+                        {
+                            'type': 'notify',
+                            'message': json.dumps({'on': False})
+                        }
+                    )
+                    continue
+                # PID calculation
+                proportional = pid_setting.kp * error
+                pid_state['integral'] += error * dt
+                derivative = (error - pid_state['prev_error']) / dt
+                pid_output = (
+                    proportional +
+                    pid_setting.ki * pid_state['integral'] +
+                    pid_setting.kd * derivative
+                )
+                current_voltage = settings.CHANNEL_CACHE.get_dac_voltage(channel)
+                new_voltage = current_voltage + pid_output
+                # Safety check: voltage range
+                if new_voltage < 0.0 or new_voltage > 2.5:
+                    self._channel_to_pid_enabled[channel] = False
+                    record_event(
+                        Event.EventType.PID,
+                        f'PID disabled for channel {channel} due to voltage out of range '
+                        f'({new_voltage:.4f} V).'
+                    )
+                    async_to_sync(channel_layer.group_send)(
+                        f'channel_{channel}_pid_operation',
+                        {'type': 'notify', 'message': json.dumps({'on': False})}
+                    )
+                    continue
+                # Apply PID output
+                self._set_dac_voltage(channel, new_voltage)
+                # Update state
+                pid_state['prev_error'] = error
+                pid_state['last_time'] = current_time
+                # Notify DAC output change
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f'channel_{channel}_dac_output',
+                    {'type': 'notify', 'message': json.dumps({'voltage': new_voltage})}
+                )
             # DAC control
             latest_commands: dict[int, float] = {}
             dac_control_slice_deadline = time.monotonic() + self._dac_control_slice_seconds
