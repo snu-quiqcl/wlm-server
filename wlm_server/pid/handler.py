@@ -91,15 +91,14 @@ class PidHandler(threading.Thread):
                 frequency_info = settings.FREQUENCY_QUEUE.pop()
                 if frequency_info is None:
                     continue
-                channel = frequency_info.channel
+                channel, measured_time = frequency_info.channel, frequency_info.measured_at
                 # Skip if PID not enabled
                 if not self._channel_to_pid_enabled.get(channel, False):
                     continue
                 pid_setting = self._channel_to_pid_setting.get(channel)
                 pid_state = self._channel_to_pid_state.get(channel)
                 # Calculate PID
-                current_time = time.monotonic()
-                dt = current_time - pid_state['last_time']
+                dt = max(0, measured_time - pid_state['last_time'])
                 error = pid_setting.target_frequency - frequency_info.frequency
                 # Safety check: large error
                 if abs(error) >= MAX_ERROR_THRESHOLD_HZ:
@@ -122,7 +121,7 @@ class PidHandler(threading.Thread):
                 # PID calculation
                 proportional = pid_setting.kp * error
                 pid_state['integral'] += error * dt
-                derivative = (error - pid_state['prev_error']) / dt
+                derivative = (error - pid_state['prev_error']) / dt if dt > 0 else 0.0
                 pid_output = (
                     proportional +
                     pid_setting.ki * pid_state['integral'] +
@@ -147,7 +146,7 @@ class PidHandler(threading.Thread):
                 self._set_dac_voltage(channel, new_voltage)
                 # Update state
                 pid_state['prev_error'] = error
-                pid_state['last_time'] = current_time
+                pid_state['last_time'] = measured_time
                 # Notify DAC output change
                 channel_layer = get_channel_layer()
                 async_to_sync(channel_layer.group_send)(

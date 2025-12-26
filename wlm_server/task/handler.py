@@ -90,7 +90,8 @@ class TaskHandler(threading.Thread):
             measurement['frequency'] = frequency_or_error
             pid_operation = settings.CHANNEL_CACHE.get_pid_operation(channel)
             if pid_operation is not None:
-                settings.FREQUENCY_QUEUE.push(FrequencyInfo(channel, frequency_or_error))
+                settings.FREQUENCY_QUEUE.push(
+                    FrequencyInfo(channel, frequency_or_error, time.monotonic()))
         else:
             measure_record = Measurement(setting=setting, error=frequency_or_error)
             measurement['error'] = frequency_or_error
