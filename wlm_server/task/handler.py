@@ -17,9 +17,9 @@ from camel_converter import dict_to_camel
 from config.models import Config
 from setting.models import Setting
 from measurement.models import Measurement
+from pid.frequency import FrequencyInfo
 from .message import ActionType, MessageQueue
 from .measure import MeasureInfo, MeasureQueue
-from pid.frequency import FrequencyInfo
 
 MEASUREMENT_SLICE_SECONDS = 0.5
 

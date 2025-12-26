@@ -11,13 +11,13 @@ from asgiref.sync import async_to_sync
 from channel.models import Channel
 from pid_setting.models import PidSetting
 from event.models import Event
+from utils import util
 from .dac_control import DacControlQueue
 from .message import ActionType, PidMessageQueue
-from utils.util import record_event
 
 MAX_ERROR_THRESHOLD_HZ = 10e9
 
-class PidHandler(threading.Thread):
+class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attributes
     """PID handler for configuring and running feedback control on WLM channels."""
 
     def __init__(self):
@@ -64,7 +64,7 @@ class PidHandler(threading.Thread):
         dac.set_voltage(dac_channel, voltage)
         settings.CHANNEL_CACHE.set_dac_voltage(channel, voltage)
 
-    def run(self):
+    def run(self):  # pylint: disable=too-many-locals, too-many-statements
         while True:
             while (message := self._message_queue.pop()) is not None:
                 data = message.data
@@ -104,7 +104,7 @@ class PidHandler(threading.Thread):
                 if abs(error) >= MAX_ERROR_THRESHOLD_HZ:
                     self._channel_to_pid_enabled[channel] = False
                     error_ghz = abs(error) / 1e9
-                    record_event(
+                    util.record_event(
                         Event.EventType.PID,
                         f'PID disabled for channel {channel} due to large error '
                         f'({error_ghz:.3f} GHz).'
@@ -132,7 +132,7 @@ class PidHandler(threading.Thread):
                 # Safety check: voltage range
                 if new_voltage < 0.0 or new_voltage > 2.5:
                     self._channel_to_pid_enabled[channel] = False
-                    record_event(
+                    util.record_event(
                         Event.EventType.PID,
                         f'PID disabled for channel {channel} due to voltage out of range '
                         f'({new_voltage:.4f} V).'
