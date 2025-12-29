@@ -5,7 +5,6 @@ from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from camel_converter import dict_to_camel
 
-from channel.models import Channel
 from pid.dac_control import DacControlInfo
 from utils import util
 
@@ -30,11 +29,6 @@ class DacControlConsumer(AsyncWebsocketConsumer):
             return
         await self.accept()
         self.channel = channel
-
-    @database_sync_to_async
-    def _check_dac_info(self, channel: Channel):
-        """Checks if channel has DAC device and channel information."""
-        return channel.dac_device is not None and channel.dac_channel is not None
 
     async def receive(self, text_data=None, bytes_data=None):
         """Receives the DAC control commands and sends them to the DAC control queue.
@@ -77,11 +71,6 @@ class DacOutputConsumer(AsyncWebsocketConsumer):
         await self.accept()
         voltage = settings.CHANNEL_CACHE.get_dac_voltage(ch)
         await self.send(text_data=json.dumps({'voltage': voltage}))
-
-    @database_sync_to_async
-    def _check_dac_info(self, channel: Channel):
-        """Checks if channel has DAC device and channel information."""
-        return channel.dac_device is not None and channel.dac_channel is not None
 
     async def disconnect(self, code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
@@ -128,11 +117,6 @@ class PidSettingConsumer(AsyncWebsocketConsumer):
             'ki': pid_setting.ki,
             'kd': pid_setting.kd
         })))
-
-    @database_sync_to_async
-    def _check_dac_info(self, channel: Channel):
-        """Checks if channel has DAC device and channel information."""
-        return channel.dac_device is not None and channel.dac_channel is not None
 
     async def disconnect(self, code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
