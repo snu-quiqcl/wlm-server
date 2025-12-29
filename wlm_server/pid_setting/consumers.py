@@ -26,6 +26,9 @@ class DacControlConsumer(AsyncWebsocketConsumer):
         if channel is None:
             await self.close(code=error_code)
             return
+        if channel.dac_device is None or channel.dac_channel is None:
+            await self.close(code=400)
+            return
         await self.accept()
         self.channel = channel
 
@@ -63,6 +66,9 @@ class DacOutputConsumer(AsyncWebsocketConsumer):
         channel, error_code = await database_sync_to_async(util.verify_channel_access)(user, ch)
         if channel is None:
             await self.close(code=error_code)
+            return
+        if channel.dac_device is None or channel.dac_channel is None:
+            await self.close(code=400)
             return
         self.group_name = f'channel_{ch}_dac_output'
         await self.channel_layer.group_add(self.group_name, self.channel_name)
@@ -103,6 +109,9 @@ class PidSettingConsumer(AsyncWebsocketConsumer):
         channel, error_code = await database_sync_to_async(util.verify_channel_access)(user, ch)
         if channel is None:
             await self.close(code=error_code)
+            return
+        if channel.dac_device is None or channel.dac_channel is None:
+            await self.close(code=400)
             return
         self.group_name = f'channel_{ch}_pid_setting'
         await self.channel_layer.group_add(self.group_name, self.channel_name)
