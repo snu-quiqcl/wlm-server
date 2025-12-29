@@ -4,6 +4,7 @@ from django.conf import settings
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 
+from channel.models import Channel
 from utils import util
 
 class PidOperationConsumer(AsyncWebsocketConsumer):
@@ -31,6 +32,11 @@ class PidOperationConsumer(AsyncWebsocketConsumer):
         on = util.is_channel_pid_enabled(ch)
         status = settings.CHANNEL_CACHE.get_pid_status(ch)
         await self.send(text_data=json.dumps({'on': on, 'status': status}))
+
+    @database_sync_to_async
+    def _check_dac_info(self, channel: Channel):
+        """Checks if channel has DAC device and channel information."""
+        return channel.dac_device is not None and channel.dac_channel is not None
 
     async def disconnect(self, code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
