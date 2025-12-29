@@ -1,12 +1,21 @@
 """Module for caching the channel status."""
 
+import threading
 from collections import defaultdict
 
+<<<<<<< HEAD
+=======
+from django.utils import timezone
+
+from channel.models import Channel
+>>>>>>> 69d5140 (Save DAC voltages periodically)
 from operation.models import Operation
 from pid_operation.models import PidOperation
 from setting.models import Setting
-from pid_setting.models import PidSetting
+from pid_setting.models import PidSetting, DacVoltage
 from lock.models import Lock
+
+DAC_VOLTAGE_SAVE_INTERVAL_SECONDS = 60.0
 
 class ChannelCache:
     """Cache for channel status."""
@@ -22,6 +31,7 @@ class ChannelCache:
         self._channel_to_dac_voltage: dict[int, float] = defaultdict(float)
         self._channel_to_pid_status: dict[int, bool] = defaultdict(bool)
         self._load()
+        self._start_dac_voltage_periodic_saving()
 
     def _load(self):
         """Loads all channels status."""
@@ -34,6 +44,9 @@ class ChannelCache:
         locks = (Lock.objects.order_by('channel', '-started_at').distinct('channel'))
         for lock in locks:
             self._channel_to_lock[lock.channel.channel] = lock
+        dac_voltages = DacVoltage.objects.order_by('channel', '-created_at').distinct('channel')
+        for dac_voltage in dac_voltages:
+            self._channel_to_dac_voltage[dac_voltage.channel.channel] = dac_voltage.voltage
 
     def set_operation(self, operation: Operation):
         """Stores the given operation as the latest.
@@ -185,3 +198,20 @@ class ChannelCache:
             The latest PID operational status.
         """
         return self._channel_to_pid_status[channel]
+
+    def _save_dac_voltages(self):
+        """Saves current DAC voltages to database."""
+        for channel_num, voltage in self._channel_to_dac_voltage.items():
+            channel = Channel.objects.get(channel=channel_num)
+            DacVoltage.objects.create(channel=channel, voltage=voltage)
+
+    def _start_dac_voltage_periodic_saving(self):
+        """Starts periodic saving of DAC voltages."""
+        def save_periodically():
+            self._save_dac_voltages()
+            timer = threading.Timer(DAC_VOLTAGE_SAVE_INTERVAL_SECONDS, save_periodically)
+            timer.daemon = True
+            timer.start()
+        timer = threading.Timer(DAC_VOLTAGE_SAVE_INTERVAL_SECONDS, save_periodically)
+        timer.daemon = True
+        timer.start()
