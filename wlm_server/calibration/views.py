@@ -25,8 +25,7 @@ def calibrate(request):
     message_queue: MessageQueue = settings.MESSAGE_QUEUE
     task_handler = TaskHandler()
     task_handler.start()
-    message = MessageInfo(ActionType.CALIB, config.calib_ch,
-                          {'exposure': config.calib_exposure, 'freq': config.calib_freq})
+    message = MessageInfo(ActionType.CALIB, config.calib_ch, {'freq': config.calib_freq})
     message_queue.push(message)
     message = MessageInfo(ActionType.CLOSE, None, None)
     message_queue.push(message)
