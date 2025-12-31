@@ -63,23 +63,19 @@ def check_dac_info(channel: Channel) -> bool:
 
 
 def verify_channel_access_with_dac(  # pylint: disable=too-many-return-statements
-    user: User, ch: int,
+    user: User, ch: int, check_lock: bool = False, check_open: bool = False,
 ) -> tuple[Channel | None, int | None]:
     """Verifies if the user has permission to access the channel and if the channel has DAC info.
     
     This function combines verify_channel_access and check_dac_info checks.
     
     Args:
-        user: User requesting access.
-        ch: Target channel.
+        Same as verify_channel_access.
 
     Returns:
-        (channel, error_code):
-          channel: Target channel object. If an error occurs, it is set to None.
-          error_code: HTTP status code for the occured error. If there is no error, it is set to
-            None. Returns 400 if channel does not have DAC info.
+        Same as verify_channel_access.
     """
-    channel, error_code = verify_channel_access(user, ch)
+    channel, error_code = verify_channel_access(user, ch, check_lock, check_open)
     if channel is None:
         return None, error_code
     if not check_dac_info(channel):
