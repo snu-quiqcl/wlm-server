@@ -12,19 +12,15 @@ class ChannelCache:
     """Cache for channel status."""
 
     def __init__(self):
-        # outer key: Channel__channel, inner key: User__username
+        # outer key: channel, inner key: username
         self._channel_to_operation: defaultdict[int, dict[str, Operation]] = defaultdict(dict)
-        # outer key: Channel__channel, inner key: User__username
-        self._channel_to_pid_operation: defaultdict[int, dict[str, PidOperation]] = defaultdict(dict)
-        # key: Channel__channel
+        # key: channel
         self._channel_to_setting: dict[int, Setting] = {}
-        # key: Channel__channel
         self._channel_to_pid_operation: dict[int, PidOperation] = {}
-        # key: Channel__channel
         self._channel_to_pid_setting: dict[int, PidSetting] = {}
-        # key: Channel__channel
         self._channel_to_lock: dict[int, Lock] = {}
         self._channel_to_dac_voltage: dict[int, float] = defaultdict(float)
+        self._channel_to_pid_status: dict[int, bool] = defaultdict(bool)
         self._load()
 
     def _load(self):
@@ -97,6 +93,15 @@ class ChannelCache:
             voltage: The latest DAC voltage.
         """
         self._channel_to_dac_voltage[channel] = voltage
+
+    def set_pid_status(self, channel: int, status: bool):
+        """Stores the given PID status as the latest.
+        
+        Args:
+            channel: Target channel.
+            status: The latest PID operational status.
+        """
+        self._channel_to_pid_status[channel] = status
 
     def delete_lock(self, channel: int):
         """Deletes the lock from the given channel.
@@ -190,3 +195,14 @@ class ChannelCache:
             The latest DAC voltage.
         """
         return self._channel_to_dac_voltage[channel]
+
+    def get_pid_status(self, channel: int) -> bool:
+        """Returns the latest PID status for the given channel.
+        
+        Args:
+            channel: Target channel.
+
+        Returns:
+            The latest PID operational status.
+        """
+        return self._channel_to_pid_status[channel]
