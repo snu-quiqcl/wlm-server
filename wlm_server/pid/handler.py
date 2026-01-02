@@ -29,6 +29,8 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
         self._channel_to_dac_info: dict[int, tuple[str, str, int]] = {}
         # {channel: pid_enabled}
         self._channel_to_pid_enabled: dict[int, bool] = {}
+        # {channel: pid_status}
+        self._channel_to_pid_status: dict[int, bool] = {}
         # {channel: pid_setting}
         self._channel_to_pid_setting: dict[int, PidSetting] = {}
         # {channel: {'prev_error': float, 'integral': float, 'last_time': float}}
@@ -75,6 +77,8 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
                     case ActionType.ON:
                         channel = data['channel']
                         self._channel_to_pid_enabled[channel] = True
+                        self._channel_to_pid_status[channel] = True
+                        settings.CHANNEL_CACHE.set_pid_status(channel, True)
                         self._channel_to_pid_state[channel] = {
                             'prev_error': 0.0,
                             'integral': 0.0,
@@ -83,6 +87,8 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
                     case ActionType.OFF:
                         channel = data['channel']
                         self._channel_to_pid_enabled[channel] = False
+                        self._channel_to_pid_status[channel] = False
+                        settings.CHANNEL_CACHE.set_pid_status(channel, False)
                     case ActionType.SETTING:
                         self._channel_to_pid_setting[data['channel']] = data['pid_setting']
             # PID
@@ -92,8 +98,9 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
                 if frequency_info is None:
                     continue
                 channel, measured_time = frequency_info.channel, frequency_info.measured_at
-                # Skip if PID not enabled
-                if not self._channel_to_pid_enabled.get(channel, False):
+                # Skip if PID not enabled or status is False
+                if not (self._channel_to_pid_enabled.get(channel, False) and
+                        self._channel_to_pid_status.get(channel, False)):
                     continue
                 pid_setting = self._channel_to_pid_setting.get(channel)
                 pid_state = self._channel_to_pid_state.get(channel)
@@ -102,7 +109,8 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
                 error = pid_setting.target_frequency - frequency_info.frequency
                 # Safety check: large error
                 if abs(error) >= MAX_ERROR_THRESHOLD_HZ:
-                    self._channel_to_pid_enabled[channel] = False
+                    self._channel_to_pid_status[channel] = False
+                    settings.CHANNEL_CACHE.set_pid_status(channel, False)
                     error_ghz = abs(error) / 1e9
                     util.record_event(
                         Event.EventType.PID,
@@ -114,7 +122,10 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
                         f'channel_{channel}_pid_operation',
                         {
                             'type': 'notify',
-                            'message': json.dumps({'on': False})
+                            'message': json.dumps({
+                                'on': True,
+                                'status': False
+                            })
                         }
                     )
                     continue
@@ -131,15 +142,23 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
                 new_voltage = current_voltage + pid_output
                 # Safety check: voltage range
                 if new_voltage < 0.0 or new_voltage > 2.5:
-                    self._channel_to_pid_enabled[channel] = False
+                    self._channel_to_pid_status[channel] = False
+                    settings.CHANNEL_CACHE.set_pid_status(channel, False)
                     util.record_event(
                         Event.EventType.PID,
                         f'PID disabled for channel {channel} due to voltage out of range '
                         f'({new_voltage:.4f} V).'
                     )
+                    channel_layer = get_channel_layer()
                     async_to_sync(channel_layer.group_send)(
                         f'channel_{channel}_pid_operation',
-                        {'type': 'notify', 'message': json.dumps({'on': False})}
+                        {
+                            'type': 'notify',
+                            'message': json.dumps({
+                                'on': True,
+                                'status': False
+                            })
+                        }
                     )
                     continue
                 # Apply PID output
