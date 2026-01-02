@@ -18,7 +18,7 @@ from utils import util
 @login_required
 @require_http_methods(['POST'])
 @api_view(['POST'])
-def handle_info(request, ch: int):
+def handle_info(request, ch: int):  # pylint: disable=too-many-locals
     user = request.user
     channel, error_code = util.verify_channel_access(user, ch, check_lock=True)
     if channel is None:
