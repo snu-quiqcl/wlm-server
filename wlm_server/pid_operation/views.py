@@ -68,7 +68,9 @@ def handle_info(request, ch: int):
             message = pid_message.PidMessageInfo(pid_message.ActionType.OFF, {'channel': ch})
             pid_message_queue.push(message)
             util.record_event(Event.EventType.PID, f'PID control for channel {ch} disabled.')
-    notif = {'on': util.is_channel_pid_enabled(ch)}
+    on = util.is_channel_pid_enabled(ch)
+    status = channel_cache.get_pid_status(ch)
+    notif = {'on': on, 'status': status}
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
         f'channel_{ch}_pid_operation', {'type': 'notify', 'message': json.dumps(notif)}
