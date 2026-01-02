@@ -3,12 +3,7 @@
 import threading
 from collections import defaultdict
 
-<<<<<<< HEAD
-=======
-from django.utils import timezone
-
 from channel.models import Channel
->>>>>>> 69d5140 (Save DAC voltages periodically)
 from operation.models import Operation
 from pid_operation.models import PidOperation
 from setting.models import Setting
