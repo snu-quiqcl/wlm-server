@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 
@@ -26,7 +27,9 @@ class PidOperationConsumer(AsyncWebsocketConsumer):
         self.group_name = f'channel_{ch}_pid_operation'
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
-        await self.send(text_data=json.dumps({'on': util.is_channel_pid_enabled(ch)}))
+        on = util.is_channel_pid_enabled(ch)
+        status = settings.CHANNEL_CACHE.get_pid_status(ch)
+        await self.send(text_data=json.dumps({'on': on, 'status': status}))
 
     async def disconnect(self, code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
@@ -37,8 +40,9 @@ class PidOperationConsumer(AsyncWebsocketConsumer):
         Args:
             event: Dictionary with two keys.
               type: Please refer to the documentation of Channels.
-              message: Dictionary with one key.
-                on: Updated PID operation status.
+              message: Dictionary with two keys.
+                on: Updated PID operation enabled status (user's intent).
+                status: Updated PID operational status (actual working state).
         """
         message = event['message']
         await self.send(text_data=message)
