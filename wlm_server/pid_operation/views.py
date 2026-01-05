@@ -5,8 +5,6 @@ from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.views.decorators.http import require_http_methods
 from rest_framework.decorators import api_view
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
 
 from pid_operation.models import PidOperation
 from event.models import Event
@@ -68,11 +66,4 @@ def handle_info(request, ch: int):  # pylint: disable=too-many-locals
             message = pid_message.PidMessageInfo(pid_message.ActionType.OFF, {'channel': ch})
             pid_message_queue.push(message)
             util.record_event(Event.EventType.PID, f'PID control for channel {ch} disabled.')
-    on = util.is_channel_pid_enabled(ch)
-    status = channel_cache.get_pid_status(ch)
-    notif = {'on': on, 'status': status}
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        f'channel_{ch}_pid_operation', {'type': 'notify', 'message': json.dumps(notif)}
-    )
     return HttpResponse(status=200)

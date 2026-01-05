@@ -67,6 +67,7 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
         settings.CHANNEL_CACHE.set_dac_voltage(channel, voltage)
 
     def run(self):  # pylint: disable=too-many-locals, too-many-statements
+        channel_layer = get_channel_layer()
         while True:
             while (message := self._message_queue.pop()) is not None:
                 data = message.data
@@ -84,11 +85,31 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
                             'integral': 0.0,
                             'last_time': time.monotonic()
                         }
+                        async_to_sync(channel_layer.group_send)(
+                            f'channel_{channel}_pid_operation',
+                            {
+                                'type': 'notify',
+                                'message': json.dumps({
+                                    'on': True,
+                                    'status': True
+                                })
+                            }
+                        )
                     case ActionType.OFF:
                         channel = data['channel']
                         self._channel_to_pid_enabled[channel] = False
                         self._channel_to_pid_status[channel] = False
                         settings.CHANNEL_CACHE.set_pid_status(channel, False)
+                        async_to_sync(channel_layer.group_send)(
+                            f'channel_{channel}_pid_operation',
+                            {
+                                'type': 'notify',
+                                'message': json.dumps({
+                                    'on': False,
+                                    'status': False
+                                })
+                            }
+                        )
                     case ActionType.SETTING:
                         self._channel_to_pid_setting[data['channel']] = data['pid_setting']
             # PID
@@ -117,7 +138,6 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
                         f'PID disabled for channel {channel} due to large error '
                         f'({error_ghz:.3f} GHz).'
                     )
-                    channel_layer = get_channel_layer()
                     async_to_sync(channel_layer.group_send)(
                         f'channel_{channel}_pid_operation',
                         {
@@ -149,7 +169,6 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
                         f'PID disabled for channel {channel} due to voltage out of range '
                         f'({new_voltage:.4f} V).'
                     )
-                    channel_layer = get_channel_layer()
                     async_to_sync(channel_layer.group_send)(
                         f'channel_{channel}_pid_operation',
                         {
@@ -167,7 +186,6 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
                 pid_state['prev_error'] = error
                 pid_state['last_time'] = measured_time
                 # Notify DAC output change
-                channel_layer = get_channel_layer()
                 async_to_sync(channel_layer.group_send)(
                     f'channel_{channel}_dac_output',
                     {'type': 'notify', 'message': json.dumps({'voltage': new_voltage})}
