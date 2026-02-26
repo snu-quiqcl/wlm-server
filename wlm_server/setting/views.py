@@ -32,6 +32,8 @@ def handle_info(request, ch: int):  # pylint: disable=too-many-locals
     if exposure_s is not None:
         if exposure_s <= 0:
             return HttpResponse(status=422)
+        if channel.max_exposure is not None and exposure_s > channel.max_exposure.total_seconds():
+            return HttpResponse(status=422)
         exposure = timedelta(seconds=exposure_s)
         update_exposure = True
         notif['exposure'] = exposure_s
