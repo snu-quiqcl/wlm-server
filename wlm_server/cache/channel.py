@@ -16,6 +16,7 @@ class ChannelCache:
         self._channel_to_setting: dict[int, Setting] = {}
         # key: Channel__channel
         self._channel_to_lock: dict[int, Lock] = {}
+        self._channel_to_dac_voltage: dict[int, float] = defaultdict(float)
         self._load()
 
     def _load(self):
@@ -50,6 +51,15 @@ class ChannelCache:
             lock: The latest lock.
         """
         self._channel_to_lock[lock.channel.channel] = lock
+
+    def set_dac_voltage(self, channel: int, voltage: float):
+        """Stores the given DAC voltage as the latest.
+        
+        Args:
+            channel: Target channel.
+            voltage: The latest DAC voltage.
+        """
+        self._channel_to_dac_voltage[channel] = voltage
 
     def delete_lock(self, channel: int):
         """Deletes the lock from the given channel.
@@ -91,3 +101,14 @@ class ChannelCache:
             The latest lock. If there is no valid lock, it returns None.
         """
         return self._channel_to_lock.get(channel, None)
+
+    def get_dac_voltage(self, channel: int) -> float:
+        """Returns the latest DAC voltage for the given channel.
+        
+        Args:
+            channel: Target channel.
+
+        Returns:
+            The latest DAC voltage.
+        """
+        return self._channel_to_dac_voltage[channel]
