@@ -2,8 +2,6 @@
 
 from collections import defaultdict
 
-from django.utils import timezone
-
 from operation.models import Operation
 from setting.models import Setting
 from lock.models import Lock
@@ -26,10 +24,8 @@ class ChannelCache:
         for setting in settings:
             self._channel_to_setting[setting.channel.channel] = setting
         locks = (Lock.objects.order_by('channel', '-started_at').distinct('channel'))
-        now = timezone.now()
         for lock in locks:
-            if lock.expires_at > now:
-                self._channel_to_lock[lock.channel.channel] = lock
+            self._channel_to_lock[lock.channel.channel] = lock
 
     def set_operation(self, operation: Operation):
         """Stores the given operation as the latest.
