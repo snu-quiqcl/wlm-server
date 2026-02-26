@@ -8,11 +8,11 @@ class ChannelAdmin(admin.ModelAdmin):
         (
             None,
             {
-                'fields': ['channel', 'teams', 'name'],
+                'fields': ['channel', 'teams', 'name', 'dac_device', 'dac_channel'],
             },
         ),
     ]
-    list_display = ['channel', 'name']
-    list_filter = []
-    search_fields = ['name']
+    list_display = ['channel', 'name', 'dac_device__name', 'dac_channel']
+    list_filter = ['teams', 'dac_device__name']
+    search_fields = ['name', 'dac_device__name', 'dac_channel']
     ordering = ['channel']
