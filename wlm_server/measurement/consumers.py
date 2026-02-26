@@ -7,7 +7,8 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from camel_converter import dict_to_camel
 
 from measurement.models import Measurement
-from measurement.serializers import MeasurementSerializer
+
+RECENT_MEASUREMENTS_WINDOW_SECONDS = 30
 
 class MeasurementConsumer(AsyncWebsocketConsumer):
     """Consumer for notifying the measurement of a specific channel.
@@ -28,13 +29,18 @@ class MeasurementConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_recent_measurements(self):
-        cutoff_time = timezone.now() - timedelta(minutes=10)
+        cutoff_time = timezone.now() - timedelta(seconds=RECENT_MEASUREMENTS_WINDOW_SECONDS)
         recent_measurements = Measurement.objects.filter(
             setting__channel__channel=self.ch,
             measured_at__gte=cutoff_time
-        ).order_by('measured_at')
-        return [dict_to_camel(measurement)
-                for measurement in MeasurementSerializer(recent_measurements, many=True).data]
+        ).values('frequency', 'error', 'measured_at').order_by('measured_at')
+        return [
+            dict_to_camel({
+                **measurement,
+                'measured_at': measurement['measured_at'].isoformat()
+            })
+            for measurement in recent_measurements
+        ]
 
     async def disconnect(self, code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)

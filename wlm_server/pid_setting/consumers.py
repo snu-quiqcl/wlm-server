@@ -3,6 +3,7 @@ import json
 from django.conf import settings
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from camel_converter import dict_to_camel
 
 from pid.dac_control import DacControlInfo
 from utils import util
@@ -21,7 +22,8 @@ class DacControlConsumer(AsyncWebsocketConsumer):
             await self.close(code=401)
             return
         ch = self.scope['url_route']['kwargs']['ch']
-        channel, error_code = await database_sync_to_async(util.verify_channel_access)(user, ch)
+        channel, error_code = await database_sync_to_async(
+            util.verify_channel_access_with_dac)(user, ch)
         if channel is None:
             await self.close(code=error_code)
             return
@@ -59,7 +61,8 @@ class DacOutputConsumer(AsyncWebsocketConsumer):
             await self.close(code=401)
             return
         ch = self.scope['url_route']['kwargs']['ch']
-        channel, error_code = await database_sync_to_async(util.verify_channel_access)(user, ch)
+        channel, error_code = await database_sync_to_async(
+            util.verify_channel_access_with_dac)(user, ch)
         if channel is None:
             await self.close(code=error_code)
             return
@@ -80,6 +83,55 @@ class DacOutputConsumer(AsyncWebsocketConsumer):
               type: Please refer to the documentation of Channels.
               message: Dictionary with one key.
                 voltage: Updated DAC voltage in V.
+        """
+        message = event['message']
+        await self.send(text_data=message)
+
+
+class PidSettingConsumer(AsyncWebsocketConsumer):
+    """Consumer for notifying the PID setting change of a specific channel.
+    
+    Attributes:
+        group_name: Name of group it belongs to in the channel layer.
+    """
+
+    # pylint: disable=attribute-defined-outside-init
+    async def connect(self):
+        user = self.scope['user']
+        if not user.is_authenticated:
+            await self.close(code=401)
+            return
+        ch = self.scope['url_route']['kwargs']['ch']
+        channel, error_code = await database_sync_to_async(
+            util.verify_channel_access_with_dac)(user, ch)
+        if channel is None:
+            await self.close(code=error_code)
+            return
+        self.group_name = f'channel_{ch}_pid_setting'
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+        pid_setting = settings.CHANNEL_CACHE.get_pid_setting(ch)
+        await self.send(text_data=json.dumps(dict_to_camel({
+            'target_frequency': pid_setting.target_frequency,
+            'kp': pid_setting.kp,
+            'ki': pid_setting.ki,
+            'kd': pid_setting.kd
+        })))
+
+    async def disconnect(self, code):
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    async def notify(self, event: dict[str, str]):
+        """Notifies the PID setting change to the channels that belong to the same group.
+        
+        Args:
+            event: Dictionary with two keys.
+              type: Please refer to the documentation of Channels.
+              message: Dictionary with up to four keys.
+                target_frequency: Updated target frequency in Hz.
+                kp: Updated proportional gain.
+                ki: Updated integral gain.
+                kd: Updated derivative gain.
         """
         message = event['message']
         await self.send(text_data=message)

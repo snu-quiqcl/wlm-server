@@ -10,6 +10,7 @@ class Channel(models.Model):
         related_name='channels',
     )
     name = models.CharField(max_length=30)
+    max_exposure = models.DurationField(null=True, blank=True)
     dac_device = models.ForeignKey(
         DacDevice,
         on_delete=models.PROTECT,
