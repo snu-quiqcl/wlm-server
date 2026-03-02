@@ -14,7 +14,12 @@ class Measurement(models.Model):
     )
     frequency = models.FloatField(blank=True, null=True, default=None)
     error = models.CharField(max_length=10, choices=ErrorType, null=True, default=None)
-    measured_at = models.DateTimeField(auto_now_add=True)
+    measured_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['setting', 'measured_at']),
+        ]
 
     def __str__(self):
         return (
