@@ -18,10 +18,9 @@ def turn_on_pid(user: User, channel: Channel) -> int:
     Returns:
         HTTP status code.
     """
-    ch = ch
+    ch = channel.channel
     pid_message_queue: pid_message.PidMessageQueue = settings.PID_MESSAGE_QUEUE
     channel_cache: ChannelCache = settings.CHANNEL_CACHE
-    pid_operation = PidOperation(user=user, channel=channel, on=True)
     util.record_event(
         Event.EventType.PID,
         f'{user.username} requested to enable PID control for channel {ch}.'
@@ -48,6 +47,8 @@ def turn_on_pid(user: User, channel: Channel) -> int:
             'This request has been ignored.'
         )
         return 409
+    pid_operation = PidOperation(user=user, channel=channel, on=True)
+    pid_operation.save()
     message = pid_message.PidMessageInfo(
         pid_message.ActionType.SETTING,
         {'channel': ch, 'pid_setting': pid_setting}
@@ -56,7 +57,6 @@ def turn_on_pid(user: User, channel: Channel) -> int:
     message = pid_message.PidMessageInfo(pid_message.ActionType.ON, {'channel': ch})
     pid_message_queue.push(message)
     util.record_event(Event.EventType.PID, f'PID control for channel {ch} enabled.')
-    pid_operation.save()
     return 200
 
 
@@ -72,11 +72,11 @@ def turn_off_pid(user: User, channel: Channel) -> int:
     """
     ch = channel.channel
     pid_message_queue: pid_message.PidMessageQueue = settings.PID_MESSAGE_QUEUE
-    pid_operation = PidOperation(user=user, channel=channel, on=False)
     util.record_event(
         Event.EventType.PID,
         f'{user.username} requested to disable PID control for channel {ch}.'
     )
+    pid_operation = PidOperation(user=user, channel=channel, on=False)
     pid_operation.save()
     if not util.is_channel_pid_enabled(ch):
         message = pid_message.PidMessageInfo(pid_message.ActionType.OFF, {'channel': ch})
