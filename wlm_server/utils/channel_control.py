@@ -1,12 +1,72 @@
+import json
+
 from django.conf import settings
+from django.utils import timezone
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 from user.models import User
 from channel.models import Channel
 from pid_operation.models import PidOperation
+from lock.models import Lock
 from event.models import Event
 from pid import message as pid_message
 from cache.channel import ChannelCache
 from utils import util
+
+def acquire_lock(user: User, channel: Channel) -> int:
+    """Acquires a lock for the given channel.
+    
+    Args:
+        user: User requesting the operation.
+        channel: Channel to acquire the lock for.
+    
+    Returns:
+        HTTP status code.
+    """
+    ch = channel.channel
+    lock = Lock(user=user, channel=channel)
+    lock.save()
+    notif = {'locked': True, 'owner': user.username}
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f'channel_{ch}_lock',
+        {'type': 'notify', 'message': json.dumps(notif)}
+    )
+    util.record_event(Event.EventType.LOCK, f'{user.username} acquired the lock of channel {ch}.')
+    return 200
+
+
+def release_lock(user: User, channel: Channel) -> int:
+    """Releases a lock for the given channel.
+    
+    Args:
+        user: User requesting the operation.
+        channel: Channel to release the lock for.
+    
+    Returns:
+        HTTP status code.
+    """
+    ch = channel.channel
+    pid_operation = settings.CHANNEL_CACHE.get_pid_operation(ch)
+    if pid_operation is not None:
+        util.record_event(
+            Event.EventType.WARNING,
+            f'Cannot release lock for channel {ch} because {user.username} is performing a '
+            'PID operation. This request has been ignored.'
+        )
+        return 409
+    lock = settings.CHANNEL_CACHE.get_lock(ch)
+    lock.expires_at = timezone.now()
+    lock.save()
+    notif = {'locked': False, 'owner': None}
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f'channel_{ch}_lock', {'type': 'notify', 'message': json.dumps(notif)}
+    )
+    util.record_event(Event.EventType.LOCK, f'{user.username} released the lock of channel {ch}.')
+    return 200
+
 
 def turn_on_pid(user: User, channel: Channel) -> int:
     """Turns on PID control for the given channel.
