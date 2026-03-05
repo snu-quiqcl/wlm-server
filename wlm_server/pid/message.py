@@ -7,7 +7,10 @@ from typing import Any
 
 class ActionType(enum.Enum):
     """Action type."""
+    ON = 'on'
+    OFF = 'off'
     CLOSE = 'close'
+    SETTING = 'setting'
 
 
 @dataclasses.dataclass
@@ -19,8 +22,14 @@ class PidMessageInfo:
         data: Additional arguments for action.
 
     Actions:
+        ON: Enable PID control for a channel.
+          data: {'channel': int}.
+        OFF: Disable PID control for a channel.
+          data: {'channel': int}.
         CLOSE: Close all the DAC connections.
           data: None.
+        SETTING: Update PID settings for a channel.
+          data: {'channel': int, 'pid_setting': PidSetting}.
     """
     action: ActionType
     data: dict[str, Any] | None
