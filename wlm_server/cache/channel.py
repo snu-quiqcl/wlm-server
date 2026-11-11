@@ -12,7 +12,7 @@ from lock.models import Lock
 
 DAC_VOLTAGE_SAVE_INTERVAL_SECONDS = 60.0
 
-class ChannelCache:
+class ChannelCache:  # pylint: disable=too-many-instance-attributes
     """Cache for channel status."""
 
     def __init__(self):
@@ -25,6 +25,7 @@ class ChannelCache:
         self._channel_to_lock: dict[int, Lock] = {}
         self._channel_to_dac_voltage: dict[int, float] = defaultdict(float)
         self._channel_to_pid_status: dict[int, bool] = defaultdict(bool)
+        self._focused_channel: int | None = None
         self._load()
         self._start_dac_voltage_periodic_saving()
 
@@ -100,6 +101,14 @@ class ChannelCache:
             status: The latest PID operational status.
         """
         self._channel_to_pid_status[channel] = status
+
+    def set_focused_channel(self, channel: int | None):
+        """Stores the focused channel.
+
+        Args:
+            channel: Channel measured exclusively. If None, no channel is focused.
+        """
+        self._focused_channel = channel
 
     def delete_lock(self, channel: int):
         """Deletes the lock from the given channel.
@@ -193,6 +202,14 @@ class ChannelCache:
             The latest PID operational status.
         """
         return self._channel_to_pid_status[channel]
+
+    def get_focused_channel(self) -> int | None:
+        """Returns the focused channel.
+
+        Returns:
+            Channel measured exclusively. If no channel is focused, it returns None.
+        """
+        return self._focused_channel
 
     def _save_dac_voltages(self):
         """Saves current DAC voltages to database."""

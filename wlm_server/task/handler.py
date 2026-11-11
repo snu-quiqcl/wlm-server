@@ -20,7 +20,7 @@ from setting.models import Setting
 from measurement.models import Measurement
 from pid.frequency import FrequencyInfo
 from utils import util
-from .message import ActionType, MessageQueue
+from .message import ActionType, MessageInfo, MessageQueue
 from .measure import MeasureInfo, MeasureQueue
 
 MEASUREMENT_SLICE_SECONDS = 0.5
@@ -39,7 +39,8 @@ class TaskHandler(threading.Thread):  # pylint: disable=too-many-instance-attrib
     
     Workflow:
         1. Check if there are remaining messages in message queue. If so, perform all tasks.
-        2. Get the most prioritized measurement from measurement queue.
+        2. Get the most prioritized measurement from measurement queue. If a running channel is
+           focused, take the focused channel instead and leave the queue untouched.
         3. Perform the measurement and record the result.
         4. Repeat steps 2 and 3 for measurement slice.
         5. Notify all results to request handlers.
@@ -54,6 +55,8 @@ class TaskHandler(threading.Thread):  # pylint: disable=too-many-instance-attrib
         self._measure_queue: MeasureQueue = MeasureQueue()
         self._channel_to_setting: dict[int, Setting] = {}
         self._active_channel: int | None = None
+        self._running_channels: set[int] = set()
+        self._focused_channel: int | None = settings.CHANNEL_CACHE.get_focused_channel()
         self._is_pattern_enabled = False
         self._channel_to_pattern_time: dict[int, float] = {}
         self._connect_wlm()
@@ -120,9 +123,11 @@ class TaskHandler(threading.Thread):  # pylint: disable=too-many-instance-attrib
     def _start_channel_measurement(self, channel: int):
         measure = MeasureInfo(channel, timezone.now())
         self._measure_queue.push(measure)
+        self._running_channels.add(channel)
 
     def _stop_channel_measurement(self, channel: int):
         self._measure_queue.remove(channel)
+        self._running_channels.discard(channel)
 
     def _set_channel_exposure(self, channel: int, exposure: timedelta):
         self._wlm.set_exposure(exposure=exposure.total_seconds(), channel=channel)
@@ -132,13 +137,29 @@ class TaskHandler(threading.Thread):  # pylint: disable=too-many-instance-attrib
             self._wlm.set_active_channel(channel=channel)
             self._active_channel = channel
 
-    def _measure_channel(self, channel: int) -> dict[str, Any]:
+    def _next_channel(self) -> tuple[int, bool] | None:
+        """Returns the channel to measure next.
+
+        Returns:
+            (channel, reschedule): The channel to measure and whether to schedule its next
+              measurement. A focused channel keeps its pending entry in the measurement queue, so
+              it is not rescheduled. If there are no scheduled measurements, it returns None.
+        """
+        if self._focused_channel in self._running_channels:
+            return self._focused_channel, False
+        measure = self._measure_queue.pop()
+        if measure is None:
+            return None
+        return measure.channel, True
+
+    def _measure_channel(self, channel: int, reschedule: bool = True) -> dict[str, Any]:
         frequency_or_error = self._wlm.get_frequency(
             channel=channel, error_on_invalid=False, wait=True, timeout=3)
         setting = self._channel_to_setting[channel]
-        deadline = timezone.now() + setting.period
-        next_measure = MeasureInfo(channel, deadline)
-        self._measure_queue.push(next_measure)
+        if reschedule:
+            deadline = timezone.now() + setting.period
+            next_measure = MeasureInfo(channel, deadline)
+            self._measure_queue.push(next_measure)
         measurement = {'frequency': None, 'error': None}
         if isinstance(frequency_or_error, float):
             measure_record = Measurement(setting=setting, frequency=frequency_or_error)
@@ -157,43 +178,57 @@ class TaskHandler(threading.Thread):  # pylint: disable=too-many-instance-attrib
     def _calibrate(self, channel: int, frequency: float):
         self._wlm.calibrate(source_type='other', source_frequency=frequency, channel=channel)
 
-    def run(self):  # pylint: disable=too-many-locals
+    def _handle_message(self, message: MessageInfo) -> bool:
+        """Performs the task of the given message.
+
+        Args:
+            message: Message from a request handler.
+
+        Returns:
+            False if the task handler should finish. Otherwise, True.
+        """
+        channel = message.channel
+        data = message.data
+        match message.action:
+            case ActionType.CLOSE:
+                self._close_wlm()
+                return False
+            case ActionType.START:
+                self._start_wlm(channel)
+            case ActionType.STOP:
+                self._stop_wlm()
+            case ActionType.OPERATE:
+                if data['on']:
+                    self._start_channel_measurement(channel)
+                else:
+                    self._stop_channel_measurement(channel)
+            case ActionType.SETTING:
+                setting = data['setting']
+                if data['update_exposure']:
+                    self._set_channel_exposure(channel, setting.exposure)
+                self._channel_to_setting[channel] = setting
+            case ActionType.CALIB:
+                self._calibrate(channel, data['freq'])
+            case ActionType.FOCUS:
+                self._focused_channel = channel
+        return True
+
+    def run(self):
         while True:
             while (message := self._message_queue.pop()) is not None:
-                channel = message.channel
-                data = message.data
-                match message.action:
-                    case ActionType.CLOSE:
-                        self._close_wlm()
-                        return
-                    case ActionType.START:
-                        self._start_wlm(channel)
-                    case ActionType.STOP:
-                        self._stop_wlm()
-                    case ActionType.OPERATE:
-                        on = data['on']
-                        if on:
-                            self._start_channel_measurement(channel)
-                        else:
-                            self._stop_channel_measurement(channel)
-                    case ActionType.SETTING:
-                        setting = data['setting']
-                        if data['update_exposure']:
-                            self._set_channel_exposure(channel, setting.exposure)
-                        self._channel_to_setting[channel] = setting
-                    case ActionType.CALIB:
-                        self._calibrate(channel, data['freq'])
+                if not self._handle_message(message):
+                    return
             measurements: dict[int, list] = defaultdict(list)  # {channel: [measurement]}
             patterns: dict[int, dict[str, Any]] = {}  # {channel: latest pattern}
             measurement_slice_deadline = time.monotonic() + MEASUREMENT_SLICE_SECONDS
             while time.monotonic() < measurement_slice_deadline:
-                measure = self._measure_queue.pop()
-                if measure is None:
+                next_channel = self._next_channel()
+                if next_channel is None:
                     time.sleep(IDLE_SLEEP_SECONDS)
                     continue
-                channel = measure.channel
+                channel, reschedule = next_channel
                 self._switch(channel)
-                measurement = self._measure_channel(channel)
+                measurement = self._measure_channel(channel, reschedule)
                 measurements[channel].append(measurement)
                 if self._is_pattern_due(channel):
                     self._channel_to_pattern_time[channel] = time.monotonic()

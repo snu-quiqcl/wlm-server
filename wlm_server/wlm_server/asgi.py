@@ -30,6 +30,7 @@ from lock.consumers import LockConsumer
 from pid_setting.consumers import DacControlConsumer, DacOutputConsumer, PidSettingConsumer
 from pid_operation.consumers import PidOperationConsumer
 from event.consumers import EventConsumer
+from focus.consumers import FocusConsumer
 from utils import util
 
 settings.CHANNEL_CACHE = ChannelCache()
@@ -50,6 +51,7 @@ router = ProtocolTypeRouter(
                     path('ws/pid_setting/<int:ch>/', PidSettingConsumer.as_asgi()),
                     path('ws/pid_operation/<int:ch>/', PidOperationConsumer.as_asgi()),
                     path('ws/event/', EventConsumer.as_asgi()),
+                    path('ws/focus/', FocusConsumer.as_asgi()),
                 ])
             )
         ),

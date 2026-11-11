@@ -13,6 +13,7 @@ class ActionType(enum.Enum):
     OPERATE = 'operate'
     SETTING = 'setting'
     CALIB = 'calibrate'
+    FOCUS = 'focus'
 
 
 @dataclasses.dataclass
@@ -48,6 +49,9 @@ class MessageInfo:
           channel: Reference channel.
           data:
             freq (float): Reference frequency in Hz.
+        FOCUS: Measure only the given channel until it is unfocused.
+          channel: Channel to focus. If None, it unfocuses and measures all channels again.
+          data: None.
     """
     action: ActionType
     channel: int | None
