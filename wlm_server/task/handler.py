@@ -9,8 +9,6 @@ from typing import Any
 
 from django.utils import timezone
 from django.conf import settings
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
 from pylablib.devices.HighFinesse.wlm import WLM
 from camel_converter import dict_to_camel
 
@@ -18,10 +16,12 @@ from config.models import Config
 from setting.models import Setting
 from measurement.models import Measurement
 from pid.frequency import FrequencyInfo
+from utils import util
 from .message import ActionType, MessageQueue
 from .measure import MeasureInfo, MeasureQueue
 
 MEASUREMENT_SLICE_SECONDS = 0.5
+IDLE_SLEEP_SECONDS = 0.01
 
 
 class TaskHandler(threading.Thread):
@@ -133,14 +133,14 @@ class TaskHandler(threading.Thread):
             while time.monotonic() < measurement_slice_deadline:
                 measure = self._measure_queue.pop()
                 if measure is None:
+                    time.sleep(IDLE_SLEEP_SECONDS)
                     continue
                 channel = measure.channel
                 self._switch(channel)
                 measurement = self._measure_channel(channel)
                 measurements[channel].append(measurement)
-            channel_layer = get_channel_layer()
             for channel, channel_measurements in measurements.items():
-                async_to_sync(channel_layer.group_send)(
+                util.group_send_from_thread(
                     f'channel_{channel}_measurement',
                     {'type': 'notify', 'message': json.dumps(channel_measurements)}
                 )

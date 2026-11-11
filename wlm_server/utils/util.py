@@ -1,3 +1,4 @@
+import asyncio
 import functools
 import json
 import threading
@@ -12,6 +13,45 @@ from user.models import User
 from channel.models import Channel
 from event.models import Event
 from event.serializers import EventSerializer
+
+_main_event_loop: asyncio.AbstractEventLoop | None = None
+
+
+def set_main_event_loop(loop: asyncio.AbstractEventLoop):
+    """Registers the event loop on which the ASGI application runs.
+
+    Args:
+        loop: Event loop of the ASGI server.
+    """
+    global _main_event_loop  # pylint: disable=global-statement
+    _main_event_loop = loop
+
+
+def group_send_from_thread(group: str, message: dict[str, Any]):
+    """Sends a message to a channel layer group from a thread other than the ASGI event loop.
+
+    It is meant for background threads such as the task and PID handlers, and it also works in
+    synchronous views. Calling async_to_sync(channel_layer.group_send) in a plain thread runs it on
+    a new event loop in that thread. With the in-memory channel layer, the ASGI event loop is then
+    not woken up, so the message is delivered only when the loop wakes up for another reason (about
+    once a second with Daphne). Instead, it schedules group_send on the ASGI event loop, which wakes
+    it up immediately.
+
+    It must not be called from the ASGI event loop thread itself, since it blocks until the message
+    is sent.
+
+    Args:
+        group: Name of the target group.
+        message: Message to send to the group.
+    """
+    channel_layer = get_channel_layer()
+    loop = _main_event_loop
+    if loop is None or loop.is_closed():
+        async_to_sync(channel_layer.group_send)(group, message)
+        return
+    future = asyncio.run_coroutine_threadsafe(channel_layer.group_send(group, message), loop)
+    future.result()
+
 
 def verify_channel_access(  # pylint: disable=too-many-return-statements
     user: User, ch: int, check_lock: bool = False, check_open: bool = False,
@@ -123,8 +163,7 @@ def record_event(category: Event.EventType, content: str):
     event = Event(category=category.value, content=content)
     event.save()
     notif = EventSerializer(event).data
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
+    group_send_from_thread(
         'event',
         {'type': 'notify', 'message': json.dumps(dict_to_camel(notif))}
     )
