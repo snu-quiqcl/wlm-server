@@ -25,7 +25,7 @@ asgi_application = get_asgi_application()
 from cache.channel import ChannelCache
 from operation.consumers import OperationConsumer
 from setting.consumers import SettingConsumer
-from measurement.consumers import MeasurementConsumer
+from measurement.consumers import MeasurementConsumer, PatternConsumer
 from lock.consumers import LockConsumer
 from pid_setting.consumers import DacControlConsumer, DacOutputConsumer, PidSettingConsumer
 from pid_operation.consumers import PidOperationConsumer
@@ -43,6 +43,7 @@ router = ProtocolTypeRouter(
                     path('ws/operation/<int:ch>/', OperationConsumer.as_asgi()),
                     path('ws/setting/<int:ch>/', SettingConsumer.as_asgi()),
                     path('ws/measurement/<int:ch>/', MeasurementConsumer.as_asgi()),
+                    path('ws/pattern/<int:ch>/', PatternConsumer.as_asgi()),
                     path('ws/lock/<int:ch>/', LockConsumer.as_asgi()),
                     path('ws/pid_setting/dac_control/<int:ch>/', DacControlConsumer.as_asgi()),
                     path('ws/pid_setting/dac_output/<int:ch>/', DacOutputConsumer.as_asgi()),
