@@ -10,9 +10,11 @@ class FrequencyInfo:
     Fields:
         channel: Target channel
         frequency: Measured frequency in Hz.
+        measured_at: Measurement timestamp.
     """
     channel: int
     frequency: float
+    measured_at: float
 
 
 class FrequencyQueue:
