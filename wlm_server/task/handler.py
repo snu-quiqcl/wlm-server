@@ -25,8 +25,12 @@ from .measure import MeasureInfo, MeasureQueue
 
 MEASUREMENT_SLICE_SECONDS = 0.5
 IDLE_SLEEP_SECONDS = 0.01
-# Interferometer pattern (fringes on the CCD) of each channel.
-PATTERN_INDEX = ESignal.cSignal1Interferometers
+# Interferometer patterns (fringes on the CCD) of each channel, by name. The WLM software shows
+# them as separate graphs. Index 1 is the wide interferometer, or the grating on grating models.
+PATTERN_SIGNALS = {
+    'interferometers': ESignal.cSignal1Interferometers,
+    'wide': ESignal.cSignal1WideInterferometer,
+}
 PATTERN_ENABLE = 1  # cPatternEnable in wlmData.h.
 PATTERN_INTERVAL_SECONDS = 0.5
 PATTERN_ITEM_TYPES = {2: ctypes.c_int16, 4: ctypes.c_int32}
@@ -66,40 +70,46 @@ class TaskHandler(threading.Thread):  # pylint: disable=too-many-instance-attrib
         self._enable_pattern()
 
     def _enable_pattern(self):
-        """Makes the WLM export the interferometer pattern.
+        """Makes the WLM export the interferometer patterns.
 
-        Pattern export is optional, so a failure only disables the pattern notification.
+        Pattern export is optional, so a failure only disables the pattern notification. A signal
+        the WLM does not have is skipped later since it has no items.
         """
         try:
-            self._wlm.lib.lib.SetPattern(PATTERN_INDEX, PATTERN_ENABLE)
+            for index in PATTERN_SIGNALS.values():
+                self._wlm.lib.lib.SetPattern(index, PATTERN_ENABLE)
         except (AttributeError, OSError):
             logger.exception('Failed to enable the interferometer pattern export.')
             return
         self._is_pattern_enabled = True
 
-    def _read_pattern(self, channel: int) -> list[int] | None:
-        """Reads the latest interferometer pattern of the given channel.
+    def _read_patterns(self, channel: int) -> dict[str, list[int]] | None:
+        """Reads the latest interferometer patterns of the given channel.
 
         Args:
             channel: Target channel.
 
         Returns:
-            Pattern intensities in CCD pixel order. If the pattern is not available, it returns
-              None.
+            Dictionary with the names in PATTERN_SIGNALS as keys and the intensities in CCD pixel
+              order as values. It contains only the signals that the WLM provides. If no pattern
+              is available, it returns None.
         """
         lib = self._wlm.lib.lib
+        patterns = {}
         try:
-            count = lib.GetPatternItemCount(PATTERN_INDEX)
-            item_type = PATTERN_ITEM_TYPES.get(lib.GetPatternItemSize(PATTERN_INDEX))
-            if count <= 0 or item_type is None:
-                return None
-            buffer = (item_type * count)()
-            lib.GetPatternDataNum(channel, PATTERN_INDEX, ctypes.addressof(buffer))
+            for name, index in PATTERN_SIGNALS.items():
+                count = lib.GetPatternItemCount(index)
+                item_type = PATTERN_ITEM_TYPES.get(lib.GetPatternItemSize(index))
+                if count <= 0 or item_type is None:
+                    continue
+                buffer = (item_type * count)()
+                lib.GetPatternDataNum(channel, index, ctypes.addressof(buffer))
+                patterns[name] = list(buffer)
         except (AttributeError, OSError):
             logger.exception('Failed to read the interferometer pattern; it is disabled.')
             self._is_pattern_enabled = False
             return None
-        return list(buffer)
+        return patterns or None
 
     def _is_pattern_due(self, channel: int) -> bool:
         if not self._is_pattern_enabled:
@@ -197,9 +207,9 @@ class TaskHandler(threading.Thread):  # pylint: disable=too-many-instance-attrib
                 measurements[channel].append(measurement)
                 if self._is_pattern_due(channel):
                     self._channel_to_pattern_time[channel] = time.monotonic()
-                    pattern = self._read_pattern(channel)
-                    if pattern is not None:
-                        patterns[channel] = {'pattern': pattern,
+                    channel_patterns = self._read_patterns(channel)
+                    if channel_patterns is not None:
+                        patterns[channel] = {'patterns': channel_patterns,
                                              'measuredAt': measurement['measuredAt']}
             for channel, channel_measurements in measurements.items():
                 util.group_send_from_thread(

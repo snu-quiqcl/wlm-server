@@ -86,7 +86,9 @@ class PatternConsumer(AsyncWebsocketConsumer):
             event: Dictionary with two keys.
               type: Please refer to the documentation of Channels.
               message: Dictionary with two keys.
-                pattern: List of interferometer intensities in CCD pixel order.
+                patterns: Dictionary of the interferometer patterns that the WLM provides, with
+                  their names ('interferometers', 'wide') as keys and lists of intensities in CCD
+                  pixel order as values.
                 measuredAt: Measured time of the corresponding measurement in ISO 8601 format.
         """
         message = event['message']
