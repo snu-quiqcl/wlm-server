@@ -7,6 +7,7 @@ For more information on this file, see
 https://docs.djangoproject.com/en/5.1/howto/deployment/asgi/
 """
 
+import asyncio
 import os
 
 from django.core.asgi import get_asgi_application
@@ -29,10 +30,11 @@ from lock.consumers import LockConsumer
 from pid_setting.consumers import DacControlConsumer, DacOutputConsumer, PidSettingConsumer
 from pid_operation.consumers import PidOperationConsumer
 from event.consumers import EventConsumer
+from utils import util
 
 settings.CHANNEL_CACHE = ChannelCache()
 
-application = ProtocolTypeRouter(
+router = ProtocolTypeRouter(
     {
         'http': asgi_application,
         'websocket': AllowedHostsOriginValidator(
@@ -52,3 +54,9 @@ application = ProtocolTypeRouter(
         ),
     }
 )
+
+
+async def application(scope, receive, send):
+    """ASGI entry point that registers the server event loop for background threads."""
+    util.set_main_event_loop(asyncio.get_running_loop())
+    await router(scope, receive, send)

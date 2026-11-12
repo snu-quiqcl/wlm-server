@@ -5,8 +5,6 @@ import threading
 import json
 
 from django.conf import settings
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
 
 from channel.models import Channel
 from pid_setting.models import PidSetting
@@ -16,6 +14,7 @@ from .dac_control import DacControlQueue
 from .message import ActionType, PidMessageQueue
 
 MAX_ERROR_THRESHOLD_HZ = 10e9
+IDLE_SLEEP_SECONDS = 0.01
 
 class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attributes
     """PID handler for configuring and running feedback control on WLM channels."""
@@ -67,7 +66,6 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
         settings.CHANNEL_CACHE.set_dac_voltage(channel, voltage)
 
     def run(self):  # pylint: disable=too-many-locals, too-many-statements
-        channel_layer = get_channel_layer()
         while True:
             while (message := self._message_queue.pop()) is not None:
                 data = message.data
@@ -85,7 +83,7 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
                             'integral': 0.0,
                             'last_time': time.monotonic()
                         }
-                        async_to_sync(channel_layer.group_send)(
+                        util.group_send_from_thread(
                             f'channel_{channel}_pid_operation',
                             {
                                 'type': 'notify',
@@ -100,7 +98,7 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
                         self._channel_to_pid_enabled[channel] = False
                         self._channel_to_pid_status[channel] = False
                         settings.CHANNEL_CACHE.set_pid_status(channel, False)
-                        async_to_sync(channel_layer.group_send)(
+                        util.group_send_from_thread(
                             f'channel_{channel}_pid_operation',
                             {
                                 'type': 'notify',
@@ -117,6 +115,7 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
             while time.monotonic() < pid_slice_deadline:
                 frequency_info = settings.FREQUENCY_QUEUE.pop()
                 if frequency_info is None:
+                    time.sleep(IDLE_SLEEP_SECONDS)
                     continue
                 channel, measured_time = frequency_info.channel, frequency_info.measured_at
                 # Skip if PID not enabled or status is False
@@ -138,7 +137,7 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
                         f'PID disabled for channel {channel} due to large error '
                         f'({error_ghz:.3f} GHz).'
                     )
-                    async_to_sync(channel_layer.group_send)(
+                    util.group_send_from_thread(
                         f'channel_{channel}_pid_operation',
                         {
                             'type': 'notify',
@@ -169,7 +168,7 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
                         f'PID disabled for channel {channel} due to voltage out of range '
                         f'({new_voltage:.4f} V).'
                     )
-                    async_to_sync(channel_layer.group_send)(
+                    util.group_send_from_thread(
                         f'channel_{channel}_pid_operation',
                         {
                             'type': 'notify',
@@ -186,7 +185,7 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
                 pid_state['prev_error'] = error
                 pid_state['last_time'] = measured_time
                 # Notify DAC output change
-                async_to_sync(channel_layer.group_send)(
+                util.group_send_from_thread(
                     f'channel_{channel}_dac_output',
                     {'type': 'notify', 'message': json.dumps({'voltage': new_voltage})}
                 )
@@ -196,16 +195,16 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
             while time.monotonic() < dac_control_slice_deadline:
                 dac_control = self._dac_control_queue.pop()
                 if dac_control is None:
+                    time.sleep(IDLE_SLEEP_SECONDS)
                     continue
                 if self._channel_to_pid_enabled.get(dac_control.channel, False):
                     continue
                 latest_commands[dac_control.channel] = dac_control.voltage
             for channel, voltage in latest_commands.items():
                 self._set_dac_voltage(channel, voltage)
-            channel_layer = get_channel_layer()
             for channel in latest_commands:
                 voltage = settings.CHANNEL_CACHE.get_dac_voltage(channel)
-                async_to_sync(channel_layer.group_send)(
+                util.group_send_from_thread(
                     f'channel_{channel}_dac_output',
                     {'type': 'notify', 'message': json.dumps({'voltage': voltage})}
                 )
