@@ -34,6 +34,7 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
         self._channel_to_pid_setting: dict[int, PidSetting] = {}
         # {channel: {'prev_error': float, 'integral': float, 'last_time': float}}
         self._channel_to_pid_state: dict[int, dict[str, float]] = {}
+        self._focus_end_count = settings.CHANNEL_CACHE.get_focus_end()[0]
         self._pid_slice_seconds = 0.5
         self._dac_control_slice_seconds = 0.5
 
@@ -52,6 +53,28 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
             dac_channel = channel.dac_channel
             self._channel_to_dac_info[ch] = (dac_device.backend, dac_device.port, dac_channel)
         return self._channel_to_dac_info[ch]
+
+    @staticmethod
+    def _initial_pid_state() -> dict[str, float]:
+        """Returns the PID state for starting the feedback from the current DAC voltage."""
+        return {'prev_error': 0.0, 'integral': 0.0, 'last_time': time.monotonic()}
+
+    def _restart_pid_after_focus(self):
+        """Restarts the PID of the channels that were paused by a focus that has ended.
+
+        While a channel is focused, the other channels are not measured. Without a restart, the
+        first measurement after the focus would see the whole pause as its time step, which makes
+        the integral term jump. The focused channel itself keeps its state since it was measured
+        all along. If several focuses ended since the last check, it restarts every channel.
+        """
+        count, unfocused_channel = settings.CHANNEL_CACHE.get_focus_end()
+        if count == self._focus_end_count:
+            return
+        kept_channel = unfocused_channel if count == self._focus_end_count + 1 else None
+        self._focus_end_count = count
+        for channel in self._channel_to_pid_state:
+            if channel != kept_channel:
+                self._channel_to_pid_state[channel] = self._initial_pid_state()
 
     def _set_dac_voltage(self, channel: int, voltage: float):
         """Sets the voltage for the given channel.
@@ -78,11 +101,7 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
                         self._channel_to_pid_enabled[channel] = True
                         self._channel_to_pid_status[channel] = True
                         settings.CHANNEL_CACHE.set_pid_status(channel, True)
-                        self._channel_to_pid_state[channel] = {
-                            'prev_error': 0.0,
-                            'integral': 0.0,
-                            'last_time': time.monotonic()
-                        }
+                        self._channel_to_pid_state[channel] = self._initial_pid_state()
                         util.group_send_from_thread(
                             f'channel_{channel}_pid_operation',
                             {
@@ -117,6 +136,7 @@ class PidHandler(threading.Thread):  # pylint: disable=too-many-instance-attribu
                 if frequency_info is None:
                     time.sleep(IDLE_SLEEP_SECONDS)
                     continue
+                self._restart_pid_after_focus()
                 channel, measured_time = frequency_info.channel, frequency_info.measured_at
                 # Skip if PID not enabled or status is False
                 if not (self._channel_to_pid_enabled.get(channel, False) and

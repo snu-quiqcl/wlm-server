@@ -26,6 +26,9 @@ class ChannelCache:  # pylint: disable=too-many-instance-attributes
         self._channel_to_dac_voltage: dict[int, float] = defaultdict(float)
         self._channel_to_pid_status: dict[int, bool] = defaultdict(bool)
         self._focused_channel: int | None = None
+        # Number of times a focus has ended, and the channel focused most recently.
+        self._focus_end_count = 0
+        self._last_unfocused_channel: int | None = None
         self._load()
         self._start_dac_voltage_periodic_saving()
 
@@ -108,6 +111,9 @@ class ChannelCache:  # pylint: disable=too-many-instance-attributes
         Args:
             channel: Channel measured exclusively. If None, no channel is focused.
         """
+        if self._focused_channel is not None and channel != self._focused_channel:
+            self._last_unfocused_channel = self._focused_channel
+            self._focus_end_count += 1
         self._focused_channel = channel
 
     def delete_lock(self, channel: int):
@@ -210,6 +216,17 @@ class ChannelCache:  # pylint: disable=too-many-instance-attributes
             Channel measured exclusively. If no channel is focused, it returns None.
         """
         return self._focused_channel
+
+    def get_focus_end(self) -> tuple[int, int | None]:
+        """Returns how many times a focus has ended and the channel of the latest one.
+
+        Returns:
+            (count, channel):
+              count: Number of times a focus has ended.
+              channel: Channel whose focus ended most recently. If no focus has ended, it is set
+                to None.
+        """
+        return self._focus_end_count, self._last_unfocused_channel
 
     def _save_dac_voltages(self):
         """Saves current DAC voltages to database."""
