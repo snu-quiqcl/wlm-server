@@ -50,6 +50,39 @@ def verify_channel_access(  # pylint: disable=too-many-return-statements
     return channel, None
 
 
+def check_dac_info(channel: Channel) -> bool:
+    """Checks if channel has DAC device and channel information.
+    
+    Args:
+        channel: Target channel object.
+    
+    Returns:
+        True if channel has both dac_device and dac_channel, False otherwise.
+    """
+    return channel.dac_device is not None and channel.dac_channel is not None
+
+
+def verify_channel_access_with_dac(  # pylint: disable=too-many-return-statements
+    user: User, ch: int, check_lock: bool = False, check_open: bool = False,
+) -> tuple[Channel | None, int | None]:
+    """Verifies if the user has permission to access the channel and if the channel has DAC info.
+    
+    This function combines verify_channel_access and check_dac_info checks.
+    
+    Args:
+        Same as verify_channel_access.
+
+    Returns:
+        Same as verify_channel_access.
+    """
+    channel, error_code = verify_channel_access(user, ch, check_lock, check_open)
+    if channel is None:
+        return None, error_code
+    if not check_dac_info(channel):
+        return None, 400
+    return channel, None
+
+
 def is_channel_running(channel: int) -> bool:
     """Returns whether the given channel is currently running.
     

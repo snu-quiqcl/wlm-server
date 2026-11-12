@@ -4,6 +4,7 @@ from rest_framework import serializers
 from .models import Channel
 
 class ChannelInfoSerializer(serializers.ModelSerializer):
+    has_dac_info = serializers.SerializerMethodField()
     in_use = serializers.SerializerMethodField()
     has_lock = serializers.SerializerMethodField()
     has_pid = serializers.SerializerMethodField()
@@ -13,10 +14,14 @@ class ChannelInfoSerializer(serializers.ModelSerializer):
         fields = (
             'channel',
             'name',
+            'has_dac_info',
             'in_use',
             'has_lock',
             'has_pid',
         )
+
+    def get_has_dac_info(self, obj: Channel):
+        return obj.dac_device is not None and obj.dac_channel is not None
 
     def get_in_use(self, obj: Channel):
         operations = settings.CHANNEL_CACHE.get_operations(obj.channel)

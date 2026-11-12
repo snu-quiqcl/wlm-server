@@ -16,7 +16,7 @@ from utils import util
 @api_view(['POST'])
 def handle_info(request, ch: int):  # pylint: disable=too-many-locals
     user = request.user
-    channel, error_code = util.verify_channel_access(user, ch, check_lock=True)
+    channel, error_code = util.verify_channel_access_with_dac(user, ch, check_lock=True)
     if channel is None:
         return HttpResponse(status=error_code)
     pid_message_queue: pid_message.PidMessageQueue = settings.PID_MESSAGE_QUEUE

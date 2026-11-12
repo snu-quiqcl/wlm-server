@@ -22,7 +22,8 @@ class DacControlConsumer(AsyncWebsocketConsumer):
             await self.close(code=401)
             return
         ch = self.scope['url_route']['kwargs']['ch']
-        channel, error_code = await database_sync_to_async(util.verify_channel_access)(user, ch)
+        channel, error_code = await database_sync_to_async(
+            util.verify_channel_access_with_dac)(user, ch)
         if channel is None:
             await self.close(code=error_code)
             return
@@ -60,7 +61,8 @@ class DacOutputConsumer(AsyncWebsocketConsumer):
             await self.close(code=401)
             return
         ch = self.scope['url_route']['kwargs']['ch']
-        channel, error_code = await database_sync_to_async(util.verify_channel_access)(user, ch)
+        channel, error_code = await database_sync_to_async(
+            util.verify_channel_access_with_dac)(user, ch)
         if channel is None:
             await self.close(code=error_code)
             return
@@ -100,7 +102,8 @@ class PidSettingConsumer(AsyncWebsocketConsumer):
             await self.close(code=401)
             return
         ch = self.scope['url_route']['kwargs']['ch']
-        channel, error_code = await database_sync_to_async(util.verify_channel_access)(user, ch)
+        channel, error_code = await database_sync_to_async(
+            util.verify_channel_access_with_dac)(user, ch)
         if channel is None:
             await self.close(code=error_code)
             return
