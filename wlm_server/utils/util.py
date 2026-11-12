@@ -65,6 +65,19 @@ def is_wlm_running() -> bool:
     return any(is_channel_running(channel.channel) for channel in Channel.objects.all())
 
 
+def is_channel_pid_enabled(channel: int) -> bool:
+    """Returns whether PID control is enabled for the given channel.
+    
+    Args:
+        channel: Target channel.
+    
+    Returns:
+        True if PID control is enabled for the channel, False otherwise.
+    """
+    pid_operation = settings.CHANNEL_CACHE.get_pid_operation(channel)
+    return pid_operation is not None
+
+
 def record_event(category: Event.EventType, content: str):
     """Records an event.
 

@@ -7,6 +7,8 @@ from typing import Any
 
 class ActionType(enum.Enum):
     """Action type."""
+    ON = 'on'
+    OFF = 'off'
     CLOSE = 'close'
 
 
@@ -19,6 +21,10 @@ class PidMessageInfo:
         data: Additional arguments for action.
 
     Actions:
+        ON: Enable PID control for a channel.
+          data: {'channel': int}.
+        OFF: Disable PID control for a channel.
+          data: {'channel': int}.
         CLOSE: Close all the DAC connections.
           data: None.
     """

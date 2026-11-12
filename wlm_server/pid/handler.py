@@ -22,6 +22,8 @@ class PidHandler(threading.Thread):
         self._dac_control_queue: DacControlQueue = settings.DAC_CONTROL_QUEUE
         # {channel: (backend_alias, port, dac_channel)}
         self._channel_to_dac_info: dict[int, tuple[str, str, int]] = {}
+        # {channel: pid_enabled}
+        self._channel_to_pid_enabled: dict[int, bool] = {}
         self._dac_control_slice_seconds = 0.5
 
     def _get_dac_info(self, ch: int) -> tuple[str, str, int]:
@@ -55,16 +57,23 @@ class PidHandler(threading.Thread):
     def run(self):
         while True:
             while (message := self._message_queue.pop()) is not None:
-                data = message.data  # pylint: disable=unused-variable
+                data = message.data
                 match message.action:
                     case ActionType.CLOSE:
                         settings.DAC_MANAGER.close_all()
                         return
+                    case ActionType.ON:
+                        self._channel_to_pid_enabled[data['channel']] = True
+                    case ActionType.OFF:
+                        self._channel_to_pid_enabled[data['channel']] = False
+            # DAC control
             latest_commands: dict[int, float] = {}
             dac_control_slice_deadline = time.monotonic() + self._dac_control_slice_seconds
             while time.monotonic() < dac_control_slice_deadline:
                 dac_control = self._dac_control_queue.pop()
                 if dac_control is None:
+                    continue
+                if self._channel_to_pid_enabled.get(dac_control.channel, False):
                     continue
                 latest_commands[dac_control.channel] = dac_control.voltage
             for channel, voltage in latest_commands.items():

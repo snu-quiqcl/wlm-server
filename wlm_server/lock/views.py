@@ -42,6 +42,14 @@ def release_lock(request, ch: int):
     channel, error_code = util.verify_channel_access(user, ch, check_lock=True)
     if channel is None:
         return HttpResponse(status=error_code)
+    pid_operation = settings.CHANNEL_CACHE.get_pid_operation(ch)
+    if pid_operation is not None:
+        util.record_event(
+            Event.EventType.WARNING,
+            f'Cannot release lock for channel {ch} because {user.username} is performing a '
+            'PID operation. This request has been ignored.'
+        )
+        return HttpResponse(status=409)
     lock = settings.CHANNEL_CACHE.get_lock(ch)
     lock.expires_at = timezone.now()
     lock.save()

@@ -3,6 +3,7 @@ import json
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
+from django.views.decorators.http import require_http_methods
 from rest_framework.decorators import api_view
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -18,8 +19,9 @@ from utils import util
 
 @util.task_synchronized
 @login_required
+@require_http_methods(['POST'])
 @api_view(['POST'])
-def handle_info(request, ch: int):  # pylint: disable=too-many-locals
+def handle_info(request, ch: int):  # pylint: disable=too-many-locals, too-many-statements
     user = request.user
     channel, error_code = util.verify_channel_access(user, ch)
     if channel is None:
@@ -54,6 +56,14 @@ def handle_info(request, ch: int):  # pylint: disable=too-many-locals
     else:
         util.record_event(Event.EventType.OPERATION,
                           f'{user.username} requested to stop the measurement of channel {ch}.')
+        pid_operation = channel_cache.get_pid_operation(ch)
+        if pid_operation is not None and pid_operation.user == user:
+            util.record_event(
+                Event.EventType.WARNING,
+                f'Cannot stop operation for channel {ch} because {user.username} is performing a '
+                'PID operation. This request has been ignored.'
+            )
+            return HttpResponse(status=409)
         operation.save()
         if not util.is_channel_running(ch):
             message = task_message.MessageInfo(task_message.ActionType.OPERATE, ch, {'on': False})
@@ -69,7 +79,7 @@ def handle_info(request, ch: int):  # pylint: disable=too-many-locals
                 pid_message_queue.push(message)
                 util.record_event(Event.EventType.PID, 'PID handler stopped.')
     requesters = [op.user.username for op in channel_cache.get_operations(ch).values() if op.on]
-    notif = {'on': on, 'requesters': requesters}
+    notif = {'on': util.is_channel_running(ch), 'requesters': requesters}
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
         f'channel_{ch}_operation', {'type': 'notify', 'message': json.dumps(notif)}
