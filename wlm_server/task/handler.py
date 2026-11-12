@@ -1,5 +1,7 @@
 """Module for task handler with WLM."""
 
+import ctypes
+import logging
 import time
 import threading
 import json
@@ -10,6 +12,7 @@ from typing import Any
 from django.utils import timezone
 from django.conf import settings
 from pylablib.devices.HighFinesse.wlm import WLM
+from pylablib.devices.HighFinesse.wlmData_defs import ESignal
 from camel_converter import dict_to_camel
 
 from config.models import Config
@@ -22,9 +25,20 @@ from .measure import MeasureInfo, MeasureQueue
 
 MEASUREMENT_SLICE_SECONDS = 0.5
 IDLE_SLEEP_SECONDS = 0.01
+# Interferometer patterns (fringes on the CCD) of each channel, by name. The WLM software shows
+# them as separate graphs. Index 1 is the wide interferometer, or the grating on grating models.
+PATTERN_SIGNALS = {
+    'interferometers': ESignal.cSignal1Interferometers,
+    'wide': ESignal.cSignal1WideInterferometer,
+}
+PATTERN_ENABLE = 1  # cPatternEnable in wlmData.h.
+PATTERN_INTERVAL_SECONDS = 0.5
+PATTERN_ITEM_TYPES = {2: ctypes.c_int16, 4: ctypes.c_int32}
+
+logger = logging.getLogger(__name__)
 
 
-class TaskHandler(threading.Thread):
+class TaskHandler(threading.Thread):  # pylint: disable=too-many-instance-attributes
     """Task handler for controlling and monitoring WLM.
     
     Workflow:
@@ -44,6 +58,8 @@ class TaskHandler(threading.Thread):
         self._measure_queue: MeasureQueue = MeasureQueue()
         self._channel_to_setting: dict[int, Setting] = {}
         self._active_channel: int | None = None
+        self._is_pattern_enabled = False
+        self._channel_to_pattern_time: dict[int, float] = {}
         self._connect_wlm()
 
     def _connect_wlm(self):
@@ -51,6 +67,55 @@ class TaskHandler(threading.Thread):
         self._wlm = WLM(config.wlm_version, config.wlm_dll_path, config.wlm_app_path)
         self._wlm.open()
         self._wlm.set_read_mode('single')
+        self._enable_pattern()
+
+    def _enable_pattern(self):
+        """Makes the WLM export the interferometer patterns.
+
+        Pattern export is optional, so a failure only disables the pattern notification. A signal
+        the WLM does not have is skipped later since it has no items.
+        """
+        try:
+            for index in PATTERN_SIGNALS.values():
+                self._wlm.lib.lib.SetPattern(index, PATTERN_ENABLE)
+        except (AttributeError, OSError):
+            logger.exception('Failed to enable the interferometer pattern export.')
+            return
+        self._is_pattern_enabled = True
+
+    def _read_patterns(self, channel: int) -> dict[str, list[int]] | None:
+        """Reads the latest interferometer patterns of the given channel.
+
+        Args:
+            channel: Target channel.
+
+        Returns:
+            Dictionary with the names in PATTERN_SIGNALS as keys and the intensities in CCD pixel
+              order as values. It contains only the signals that the WLM provides. If no pattern
+              is available, it returns None.
+        """
+        lib = self._wlm.lib.lib
+        patterns = {}
+        try:
+            for name, index in PATTERN_SIGNALS.items():
+                count = lib.GetPatternItemCount(index)
+                item_type = PATTERN_ITEM_TYPES.get(lib.GetPatternItemSize(index))
+                if count <= 0 or item_type is None:
+                    continue
+                buffer = (item_type * count)()
+                lib.GetPatternDataNum(channel, index, ctypes.addressof(buffer))
+                patterns[name] = list(buffer)
+        except (AttributeError, OSError):
+            logger.exception('Failed to read the interferometer pattern; it is disabled.')
+            self._is_pattern_enabled = False
+            return None
+        return patterns or None
+
+    def _is_pattern_due(self, channel: int) -> bool:
+        if not self._is_pattern_enabled:
+            return False
+        last_time = self._channel_to_pattern_time.get(channel)
+        return last_time is None or time.monotonic() - last_time >= PATTERN_INTERVAL_SECONDS
 
     def _close_wlm(self):
         self._wlm.close()
@@ -129,6 +194,7 @@ class TaskHandler(threading.Thread):
                     case ActionType.CALIB:
                         self._calibrate(channel, data['freq'])
             measurements: dict[int, list] = defaultdict(list)  # {channel: [measurement]}
+            patterns: dict[int, dict[str, Any]] = {}  # {channel: latest pattern}
             measurement_slice_deadline = time.monotonic() + MEASUREMENT_SLICE_SECONDS
             while time.monotonic() < measurement_slice_deadline:
                 measure = self._measure_queue.pop()
@@ -139,8 +205,19 @@ class TaskHandler(threading.Thread):
                 self._switch(channel)
                 measurement = self._measure_channel(channel)
                 measurements[channel].append(measurement)
+                if self._is_pattern_due(channel):
+                    self._channel_to_pattern_time[channel] = time.monotonic()
+                    channel_patterns = self._read_patterns(channel)
+                    if channel_patterns is not None:
+                        patterns[channel] = {'patterns': channel_patterns,
+                                             'measuredAt': measurement['measuredAt']}
             for channel, channel_measurements in measurements.items():
                 util.group_send_from_thread(
                     f'channel_{channel}_measurement',
                     {'type': 'notify', 'message': json.dumps(channel_measurements)}
+                )
+            for channel, pattern in patterns.items():
+                util.group_send_from_thread(
+                    f'channel_{channel}_pattern',
+                    {'type': 'notify', 'message': json.dumps(pattern)}
                 )

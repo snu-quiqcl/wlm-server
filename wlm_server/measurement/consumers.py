@@ -59,3 +59,37 @@ class MeasurementConsumer(AsyncWebsocketConsumer):
         """
         message = event['message']
         await self.send(text_data=message)
+
+
+class PatternConsumer(AsyncWebsocketConsumer):
+    """Consumer for notifying the interferometer pattern of a specific channel.
+
+    Attributes:
+        ch: Target WLM channel.
+        group_name: Name of group it belongs to in the channel layer.
+    """
+
+    # pylint: disable=attribute-defined-outside-init
+    async def connect(self):
+        self.ch = self.scope['url_route']['kwargs']['ch']
+        self.group_name = f'channel_{self.ch}_pattern'
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+
+    async def disconnect(self, code):
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    async def notify(self, event: dict[str, str]):
+        """Notifies the pattern to the channels that belong to the same group.
+
+        Args:
+            event: Dictionary with two keys.
+              type: Please refer to the documentation of Channels.
+              message: Dictionary with two keys.
+                patterns: Dictionary of the interferometer patterns that the WLM provides, with
+                  their names ('interferometers', 'wide') as keys and lists of intensities in CCD
+                  pixel order as values.
+                measuredAt: Measured time of the corresponding measurement in ISO 8601 format.
+        """
+        message = event['message']
+        await self.send(text_data=message)
