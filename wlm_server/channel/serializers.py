@@ -14,6 +14,7 @@ class ChannelInfoSerializer(serializers.ModelSerializer):
         fields = (
             'channel',
             'name',
+            'max_exposure',
             'has_dac_info',
             'in_use',
             'has_lock',
