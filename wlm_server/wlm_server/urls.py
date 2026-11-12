@@ -25,5 +25,6 @@ urlpatterns = [
     path('api/calibration/', include('calibration.urls')),
     path('api/lock/', include('lock.urls')),
     path('api/pid_operation/', include('pid_operation.urls')),
+    path('api/pid_setting/', include('pid_setting.urls')),
     path('admin/', admin.site.urls),
 ]

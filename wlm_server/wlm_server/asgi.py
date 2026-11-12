@@ -26,7 +26,7 @@ from operation.consumers import OperationConsumer
 from setting.consumers import SettingConsumer
 from measurement.consumers import MeasurementConsumer
 from lock.consumers import LockConsumer
-from pid_setting.consumers import DacControlConsumer, DacOutputConsumer
+from pid_setting.consumers import DacControlConsumer, DacOutputConsumer, PidSettingConsumer
 from pid_operation.consumers import PidOperationConsumer
 from event.consumers import EventConsumer
 
@@ -44,6 +44,7 @@ application = ProtocolTypeRouter(
                     path('ws/lock/<int:ch>/', LockConsumer.as_asgi()),
                     path('ws/pid_setting/dac_control/<int:ch>/', DacControlConsumer.as_asgi()),
                     path('ws/pid_setting/dac_output/<int:ch>/', DacOutputConsumer.as_asgi()),
+                    path('ws/pid_setting/<int:ch>/', PidSettingConsumer.as_asgi()),
                     path('ws/pid_operation/<int:ch>/', PidOperationConsumer.as_asgi()),
                     path('ws/event/', EventConsumer.as_asgi()),
                 ])

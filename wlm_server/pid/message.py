@@ -10,6 +10,7 @@ class ActionType(enum.Enum):
     ON = 'on'
     OFF = 'off'
     CLOSE = 'close'
+    SETTING = 'setting'
 
 
 @dataclasses.dataclass
@@ -27,6 +28,8 @@ class PidMessageInfo:
           data: {'channel': int}.
         CLOSE: Close all the DAC connections.
           data: None.
+        SETTING: Update PID settings for a channel.
+          data: {'channel': int, 'pid_setting': PidSetting}.
     """
     action: ActionType
     data: dict[str, Any] | None
