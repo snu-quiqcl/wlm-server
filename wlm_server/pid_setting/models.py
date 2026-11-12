@@ -2,6 +2,23 @@ from django.db import models
 
 from channel.models import Channel
 
+class DacVoltage(models.Model):
+    channel = models.ForeignKey(
+        Channel,
+        on_delete=models.PROTECT,
+        related_name='dac_voltage_history',
+    )
+    voltage = models.FloatField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return (
+            f'Channel: {self.channel}, '
+            f'Voltage: {self.voltage}, '
+            f'Created at: {self.created_at}'
+        )
+
+
 class PidSetting(models.Model):
     channel = models.ForeignKey(
         Channel,

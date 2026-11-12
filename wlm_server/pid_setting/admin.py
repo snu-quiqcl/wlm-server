@@ -1,6 +1,22 @@
 from django.contrib import admin
 
-from .models import PidSetting
+from .models import DacVoltage, PidSetting
+
+@admin.register(DacVoltage)
+class DacVoltageAdmin(admin.ModelAdmin):
+    fieldsets = [
+        (
+            None,
+            {
+                'fields': ['channel', 'voltage', 'created_at'],
+            },
+        ),
+    ]
+    list_display = ['id', 'channel', 'voltage', 'created_at']
+    list_filter = ['channel']
+    ordering = ['-created_at']
+    readonly_fields = ['created_at']
+
 
 @admin.register(PidSetting)
 class PidSettingAdmin(admin.ModelAdmin):
