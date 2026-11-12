@@ -127,7 +127,6 @@ class TaskHandler(threading.Thread):
                             self._set_channel_exposure(channel, setting.exposure)
                         self._channel_to_setting[channel] = setting
                     case ActionType.CALIB:
-                        self._set_channel_exposure(channel, data['exposure'])
                         self._calibrate(channel, data['freq'])
             measurements: dict[int, list] = defaultdict(list)  # {channel: [measurement]}
             measurement_slice_deadline = time.monotonic() + MEASUREMENT_SLICE_SECONDS

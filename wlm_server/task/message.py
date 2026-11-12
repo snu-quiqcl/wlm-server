@@ -47,7 +47,6 @@ class MessageInfo:
         CALIB: Calibrate the WLM.
           channel: Reference channel.
           data:
-            exposure (datetime.timedelta): Exposure time.
             freq (float): Reference frequency in Hz.
     """
     action: ActionType
